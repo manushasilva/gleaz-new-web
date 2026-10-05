@@ -5,6 +5,7 @@ export type Product = {
   title: string;
   price: number;
   discountedPrice?: number | null;
+  discountPercentage?: number | null; // <--- Add this
   slug: string;
   quantity: number;
   updatedAt: Date;
