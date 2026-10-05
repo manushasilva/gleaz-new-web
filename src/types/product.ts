@@ -1,11 +1,9 @@
-
-
 export type Product = {
   id: string;
   title: string;
   price: number;
   discountedPrice?: number | null;
-  discountPercentage?: number | null; // <--- Add this
+  discountPercentage?: number | null;
   slug: string;
   quantity: number;
   updatedAt: Date;
@@ -19,6 +17,17 @@ export type Product = {
   }[];
 };
 
+// Add discountPercentage here too if StoreProduct is mapped from or related to this type
+export type StoreProduct = {
+  id: string;
+  title: string;
+  price: number;
+  discountedPrice?: number | null;
+  discountPercentage?: number | null; // <--- Add this
+  slug: string;
+  quantity: number;
+  // ... any other fields StoreProduct has
+};
 
 export type IProductByDetails = {
   id: string;
@@ -27,6 +36,7 @@ export type IProductByDetails = {
   description: string | null;
   price: number;
   discountedPrice?: number | null;
+  discountPercentage?: number | null; // <--- Add this here as well
   slug: string;
   quantity: number;
   updatedAt: Date;
@@ -57,4 +67,3 @@ export type IProductByDetails = {
   offers: string[] | null;
   sku: string | null;
 };
-
