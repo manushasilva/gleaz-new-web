@@ -13,6 +13,7 @@ type StoreProduct = {
   name: string;
   category: "women" | "men" | "accessories";
   price: string;
+  discountPercentage?: number | string; // <--- Added this property
   image: string;
   badge: string;
   tone: string;
