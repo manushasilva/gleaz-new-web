@@ -1,7 +1,8 @@
 "use client";
 import { CloseLine } from "@/assets/icons";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useCart } from "@/hooks/useCart";
 import EmptyCart from "./EmptyCart";
 import SingleItem from "./SingleItem";
@@ -35,7 +36,26 @@ const CartSidebarModal = () => {
   }, [shouldDisplayCart, handleCartClick]);
 
   const router = useRouter();
+
+  const [userLoggedIn, setUserLoggedIn] = useState(false);
+
+  useEffect(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("gleaz-user") || "null");
+      setUserLoggedIn(Boolean(user?.email));
+    } catch {
+      setUserLoggedIn(false);
+    }
+  }, []);
+
   const handleCheckout = () => {
+    if (!userLoggedIn) {
+      toast.error("Please sign in before checkout.");
+      handleCartClick();
+      router.push("/signin");
+      return;
+    }
+
     router.push("/checkout");
     handleCartClick();
   };
@@ -89,22 +109,44 @@ const CartSidebarModal = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Link
-              onClick={() => handleCartClick()}
-              href="/cart"
-              className="flex justify-center w-full px-6 py-3 text-base font-medium text-white duration-200 ease-out rounded-lg bg-blue hover:bg-blue-dark"
-            >
-              View Cart
-            </Link>
+          {!userLoggedIn ? (
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-center">
+              <p className="text-base font-semibold text-dark">Create account / Sign in to continue</p>
+              <div className="mt-4 flex items-center gap-3">
+                <Link
+                  onClick={() => handleCartClick()}
+                  href="/signup"
+                  className="flex-1 rounded-lg bg-dark px-4 py-3 text-sm font-medium text-white"
+                >
+                  Create account
+                </Link>
+                <Link
+                  onClick={() => handleCartClick()}
+                  href="/signin"
+                  className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-dark"
+                >
+                  Sign in
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <Link
+                onClick={() => handleCartClick()}
+                href="/cart"
+                className="flex justify-center w-full px-6 py-3 text-base font-medium text-white duration-200 ease-out rounded-lg bg-blue hover:bg-blue-dark"
+              >
+                View Cart
+              </Link>
 
-            <button
-              onClick={() => handleCheckout()}
-              className="flex justify-center w-full px-6 py-3 text-base font-medium text-white duration-200 ease-out rounded-lg bg-dark hover:bg-opacity-95"
-            >
-              Checkout
-            </button>
-          </div>
+              <button
+                onClick={() => handleCheckout()}
+                className="flex justify-center w-full px-6 py-3 text-base font-medium text-white duration-200 ease-out rounded-lg bg-dark hover:bg-opacity-95"
+              >
+                Checkout
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>

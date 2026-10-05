@@ -19,7 +19,7 @@ const accountLinks = [
   {
     id: 4,
     label: "Shop",
-    href: "/shop-with-sidebar",
+    href: "/shop-with-sidebar?category=women",
   },
 ];
 export default function AccountLinks() {

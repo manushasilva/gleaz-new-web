@@ -14,16 +14,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const seoSettings = await getSeoSettings();
   const site_name = await getSiteName();
   return {
-    title: `${seoSettings?.siteTitle || "Home Page"} | ${site_name}`,
-    description: seoSettings?.metadescription || "Cozy-commerce is a next.js e-commerce boilerplate built with nextjs, typescript, tailwindcss, and prisma.",
-    keywords: seoSettings?.metaKeywords || "e-commerce, online store",
+    title: `${seoSettings?.siteTitle || "GLEAZ"} | ${site_name}`,
+    description: seoSettings?.metadescription || "GLEAZ is a modern clothing brand offering elevated everyday essentials and premium fashion essentials.",
+    keywords: seoSettings?.metaKeywords || "GLEAZ, clothing, fashion, boutique, modern apparel",
     openGraph: {
       images: seoSettings?.metaImage ? [seoSettings.metaImage] : [],
     },
     icons: {
-      icon: seoSettings?.favicon || "/favicon.ico",
-      shortcut: seoSettings?.favicon || "/favicon.ico",
-      apple: seoSettings?.favicon || "/favicon.ico",
+      icon: seoSettings?.favicon || "/images/logo/gleaz-logo.svg",
+      shortcut: seoSettings?.favicon || "/images/logo/gleaz-logo.svg",
+      apple: seoSettings?.favicon || "/images/logo/gleaz-logo.svg",
     },
   };
 }

@@ -1,5 +1,6 @@
 import { Category } from "@prisma/client";
 import Image from "next/image";
+import { normalizeImageSrc } from "@/utils/normalizeImageSrc";
 import Link from "next/link";
 
 const SingleItem = ({ item }: { item: Category }) => {
@@ -10,7 +11,7 @@ const SingleItem = ({ item }: { item: Category }) => {
     >
       <div className="w-[130px] h-[130px] bg-[#F2F3F8]  rounded-full flex items-center justify-center mb-4">
         {item.img && (
-          <Image src={item.img} alt="Category" width={80} height={80} style={{ width: "auto", height: "auto" }} />
+          <Image src={normalizeImageSrc(item.img)} alt="Category" width={80} height={80} style={{ width: "auto", height: "auto" }} />
         )}
       </div>
 

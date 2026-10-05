@@ -15,16 +15,11 @@ const nextConfig = {
         protocol: "https",
         hostname: "res.cloudinary.com",
       },
-    ],
-  },
-  redirects: async () => {
-    return [
       {
-        source: "/admin",
-        destination: "/admin/dashboard",
-        permanent: true,
+        protocol: "https",
+        hostname: "images.unsplash.com",
       },
-    ];
+    ],
   },
   experimental: {
     serverActions: {

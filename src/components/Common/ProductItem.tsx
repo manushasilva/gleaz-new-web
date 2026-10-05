@@ -10,7 +10,6 @@ import { calculateDiscountPercentage } from "@/utils/calculateDiscountPercentage
 import { formatPrice } from "@/utils/formatePrice";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import CheckoutBtn from "../Shop/CheckoutBtn";
@@ -31,8 +30,6 @@ const ProductItem = ({ item, bgClr = "[#F6F7FB]" }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
 
   const { addItem, cartDetails } = useCart();
-
-  const pathUrl = usePathname();
 
   const isAlradyAdded = Object.values(cartDetails ?? {}).some(
     (cartItem) => cartItem.id === item.id
@@ -92,12 +89,7 @@ const ProductItem = ({ item, bgClr = "[#F6F7FB]" }: Props) => {
       <div
         className={`relative overflow-hidden border border-gray-3 flex items-center justify-center rounded-xl bg-${bgClr} min-h-[270px] mb-4`}
       >
-        <Link
-          href={`${pathUrl.includes("products")
-            ? `${item?.slug}`
-            : `products/${item?.slug}`
-            }`}
-        >
+        <Link href={`/products/${item?.slug}`}>
           <Image
             src={defaultVariant?.image ? defaultVariant.image : ""}
             alt={item.title || "product-image"}
@@ -152,12 +144,7 @@ const ProductItem = ({ item, bgClr = "[#F6F7FB]" }: Props) => {
       </div>
 
       <h3 className="font-semibold text-dark ease-out text-base duration-200 hover:text-blue mb-1.5 line-clamp-1">
-        <Link
-          href={`${pathUrl.includes("products")
-            ? `${item?.slug}`
-            : `products/${item?.slug}`
-            }`}
-        >
+        <Link href={`/products/${item?.slug}`}>
           {" "}
           {item.title}{" "}
         </Link>

@@ -21,7 +21,14 @@ const SingleItem = ({ item }: any) => {
     <div className="flex items-center justify-between gap-5">
       <div className="flex items-center w-full gap-6">
         <div className="flex items-center justify-center rounded-[10px] bg-gray-3 w-22.5 h-22.5 shrink-0">
-          <Image src={item.image} alt="product" width={64} height={64} />
+          {(() => {
+            const src = typeof item?.image === "string" ? item.image.trim() : "";
+            const isAbsolute = src.startsWith("http://") || src.startsWith("https://");
+            const isLocal = src.startsWith("/");
+            const validSrc = isAbsolute || isLocal ? src : "/images/logo/logo.svg";
+
+            return <Image src={validSrc} alt="product" width={64} height={64} />;
+          })()}
         </div>
 
         <div>
@@ -30,7 +37,7 @@ const SingleItem = ({ item }: any) => {
               {item.name} ({item.quantity})
             </button>
           </h3>
-          <p className="font-normal text-custom-sm">Price: ${item.price}</p>
+          <p className="font-normal text-custom-sm">Price: LKR {item.price}</p>
         </div>
       </div>
 

@@ -1,0 +1,110 @@
+{
+  "users": [
+    {
+      "id": "admin-1",
+      "username": "admin",
+      "fullName": "Admin User",
+      "email": "admin.updated@cozycommerce.com",
+      "phone": "0771234567",
+      "address": "Updated Address 123",
+      "passwordHash": "$2b$10$yBkoHs92luuhye5/483pj.iBZvfvHiSzO8EroV.e//5ol5vOGyOqG",
+      "role": "admin",
+      "createdAt": "2026-09-12T15:24:17.305Z"
+    },
+    {
+      "id": "b580384f-e59e-4aec-a8fd-bb188bf28877",
+      "username": "manusha",
+      "fullName": "manusha",
+      "email": "manushakpm1@gmail.com",
+      "phone": "0712770257",
+      "address": "No 63 dkfdshf izxhf",
+      "passwordHash": "$2b$10$f22eGXKRxpQ70tfXVqxeHeExdjLCzTxn9ot2.j0PfBa8UzSBb/vPW",
+      "role": "user",
+      "createdAt": "2026-09-12T19:15:36.092Z"
+    },
+    {
+      "id": "d5912889-876b-4410-9387-9392a081ff16",
+      "username": "manusha",
+      "fullName": "manusha",
+      "email": "manushakpm12@gmail.com",
+      "phone": "0712993332",
+      "address": "No 29s sad",
+      "passwordHash": "$2b$10$hhGaT3zd.0FCVrtoSzrsQOUPmfH7skx7N5fYmBqDCtdLMRgw94HUK",
+      "role": "user",
+      "createdAt": "2026-09-15T18:10:39.782Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "612195a6-86a3-4b41-9371-9a0f4740ff86",
+      "name": "N;OUSE",
+      "category": "women",
+      "price": "8500",
+      "image": "/images/products/1789495569399-article_full_1x.jpg",
+      "badge": "In stock",
+      "tone": "#d9b0a8",
+      "slug": "n-ouse",
+      "description": "",
+      "createdAt": "2026-09-15T18:06:27.626Z",
+      "updatedAt": "2026-09-15T18:42:53.362Z",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "colors": [
+        "#d9b0a8"
+      ],
+      "discountPercentage": 20
+    },
+    {
+      "id": "9921bddd-7a3c-4790-ac00-fb3d695e8631",
+      "name": "Test",
+      "category": "men",
+      "price": "300",
+      "image": "/images/logo/logo.svg",
+      "badge": "In stock",
+      "tone": "#d9b0a8",
+      "slug": "test",
+      "description": "",
+      "createdAt": "2026-09-10T21:11:34.294Z",
+      "updatedAt": "2026-09-10T21:11:34.295Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": "d770aa1f-fbac-432b-8e3a-f5aeab6161d1",
+      "customerName": "Manusha",
+      "email": "manushakpm1@gmail.com",
+      "phone": "07193242345",
+      "address": "sdf",
+      "city": "sfs",
+      "postalCode": "3242",
+      "country": "s",
+      "notes": "3",
+      "items": [
+        {
+          "id": "9921bddd-7a3c-4790-ac00-fb3d695e8631",
+          "name": "Test",
+          "quantity": 2,
+          "price": 300,
+          "color": "#d9b0a8"
+        }
+      ],
+      "orderTotal": 600,
+      "createdAt": "2026-09-12T19:22:25.045Z"
+    }
+  ],
+  "landing": {
+    "heroTitle": "The Cotton",
+    "heroSubtitle": "MUSE",
+    "heroImage": "/images/products/1789496606840-article_full_1x.jpg",
+    "heroBadge": "New Edit",
+    "ctaText": "Shop now",
+    "ctaLink": "/shop-with-sidebar?category=women",
+    "womenSectionTitle": "Women",
+    "menSectionTitle": "Men"
+  }
+}

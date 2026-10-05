@@ -124,9 +124,9 @@ export const selectTotalPrice = createSelector([selectCartItems], (items) => {
 export const selectFormattedTotalPrice = createSelector(
   [selectTotalPrice],
   (totalPrice) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-LK", {
       style: "currency",
-      currency: "USD",
+      currency: "LKR",
     }).format(totalPrice / 100);
   }
 );

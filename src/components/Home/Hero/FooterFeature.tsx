@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import { normalizeImageSrc } from "@/utils/normalizeImageSrc";
 
 const featureData = [
   {
@@ -31,7 +32,7 @@ const FooterFeature = () => {
         <div className="flex flex-wrap items-center gap-7.5 xl:gap-12.5">
           {featureData.map((item, key) => (
             <div className="flex items-center gap-4" key={key}>
-              <Image src={item.img} alt="icons" width={40} height={41} />
+              <Image src={normalizeImageSrc(item.img)} alt="icons" width={40} height={41} />
 
               <div>
                 <h3 className="text-lg font-semibold text-dark">

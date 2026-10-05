@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prismaDB";
+import { getProducts as getStoreProducts } from "@/lib/storeData";
 import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 
@@ -20,7 +21,7 @@ export const getProductsIdAndTitle = unstable_cache(
 // get new arrival product
 export const getNewArrivalsProduct = unstable_cache(
   async () => {
-    const products = await prisma.product.findMany({
+    let products = await prisma.product.findMany({
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
@@ -50,13 +51,36 @@ export const getNewArrivalsProduct = unstable_cache(
         }
       },
       take: 8
-    });
-    return products.map(({ _count, ...item }) => ({
-      ...item,
-      reviews: _count.reviews,
-      price: item.price.toNumber(),
-      discountedPrice: item?.discountedPrice ? item.discountedPrice.toNumber() : null
-    }))
+      });
+
+      // Fallback: if DB has no products, use file-store products (admin-entered)
+      if (!products || products.length === 0) {
+        const store = await getStoreProducts();
+        products = store.map((p: any) => ({
+          id: p.id,
+          title: p.name,
+          shortDescription: p.description || "",
+          price: Number(String(p.price).replace(/[^0-9.-]+/g, "")) || 0,
+          discountedPrice: null,
+          slug: p.slug || String(p.id),
+          quantity: 1,
+          updatedAt: p.updatedAt ? new Date(p.updatedAt) : new Date(p.createdAt || Date.now()),
+          productVariants: [
+            { image: p.image || "", color: "", size: "", isDefault: true },
+          ],
+          _count: { reviews: 0 },
+        }));
+      }
+    return products.map(({ _count, ...item }) => {
+      const priceVal = item && typeof (item as any).price?.toNumber === "function" ? (item as any).price.toNumber() : Number(item.price || 0);
+      const discountedVal = item && typeof (item as any).discountedPrice?.toNumber === "function" ? (item as any).discountedPrice.toNumber() : (item as any).discountedPrice ?? null;
+      return {
+        ...item,
+        reviews: _count?.reviews || 0,
+        price: priceVal,
+        discountedPrice: discountedVal,
+      } as any;
+    })
   },
   ['products'], { tags: ['products'] }
 );
@@ -64,7 +88,7 @@ export const getNewArrivalsProduct = unstable_cache(
 // get best selling product
 export const getBestSellingProducts = unstable_cache(
   async () => {
-    const products = await prisma.product.findMany({
+    let products = await prisma.product.findMany({
       select: {
         id: true,
         title: true,
@@ -98,13 +122,35 @@ export const getBestSellingProducts = unstable_cache(
         },
       },
       take: 6
+      });
+
+      if (!products || products.length === 0) {
+        const store = await getStoreProducts();
+        products = store.map((p: any) => ({
+          id: p.id,
+          title: p.name,
+          shortDescription: p.description || "",
+          price: Number(String(p.price).replace(/[^0-9.-]+/g, "")) || 0,
+          discountedPrice: null,
+          slug: p.slug || String(p.id),
+          quantity: 1,
+          updatedAt: p.updatedAt ? new Date(p.updatedAt) : new Date(p.createdAt || Date.now()),
+          productVariants: [
+            { image: p.image || "", color: "", size: "", isDefault: true },
+          ],
+          _count: { reviews: 0 },
+        }));
+      }
+    return products.map(({ _count, ...item }) => {
+      const priceVal = item && typeof (item as any).price?.toNumber === "function" ? (item as any).price.toNumber() : Number(item.price || 0);
+      const discountedVal = item && typeof (item as any).discountedPrice?.toNumber === "function" ? (item as any).discountedPrice.toNumber() : (item as any).discountedPrice ?? null;
+      return {
+        ...item,
+        reviews: _count?.reviews || 0,
+        price: priceVal,
+        discountedPrice: discountedVal,
+      } as any;
     });
-    return products.map(({ _count, ...item }) => ({
-      ...item,
-      reviews: _count.reviews, // Extract review count
-      price: item.price.toNumber(),
-      discountedPrice: item?.discountedPrice ? item.discountedPrice.toNumber() : null
-    }));
   },
   ['products'], { tags: ['products'] }
 );
@@ -112,7 +158,7 @@ export const getBestSellingProducts = unstable_cache(
 // get latest product
 export const getLatestProducts = unstable_cache(
   async () => {
-    const products = await prisma.product.findMany({
+    let products = await prisma.product.findMany({
       select: {
         id: true,
         title: true,
@@ -145,13 +191,35 @@ export const getLatestProducts = unstable_cache(
         { updatedAt: "desc" },
       ],
       take: 3
+      });
+
+      if (!products || products.length === 0) {
+        const store = await getStoreProducts();
+        products = store.map((p: any) => ({
+          id: p.id,
+          title: p.name,
+          shortDescription: p.description || "",
+          price: Number(String(p.price).replace(/[^0-9.-]+/g, "")) || 0,
+          discountedPrice: null,
+          slug: p.slug || String(p.id),
+          quantity: 1,
+          updatedAt: p.updatedAt ? new Date(p.updatedAt) : new Date(p.createdAt || Date.now()),
+          productVariants: [
+            { image: p.image || "", color: "", size: "", isDefault: true },
+          ],
+          _count: { reviews: 0 },
+        }));
+      }
+    return products.map(({ _count, ...item }) => {
+      const priceVal = item && typeof (item as any).price?.toNumber === "function" ? (item as any).price.toNumber() : Number(item.price || 0);
+      const discountedVal = item && typeof (item as any).discountedPrice?.toNumber === "function" ? (item as any).discountedPrice.toNumber() : (item as any).discountedPrice ?? null;
+      return {
+        ...item,
+        reviews: _count?.reviews || 0,
+        price: priceVal,
+        discountedPrice: discountedVal,
+      } as any;
     });
-    return products.map(({ _count, ...item }) => ({
-      ...item,
-      reviews: _count.reviews, // Extract review count
-      price: item.price.toNumber(),
-      discountedPrice: item?.discountedPrice ? item.discountedPrice.toNumber() : null
-    }));
   },
   ['products'], { tags: ['products'] }
 );

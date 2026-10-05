@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import Providers from "./Providers";
 import NextTopLoader from "nextjs-toploader";
 import MainHeader from "@/components/Header/MainHeader";
+import HeaderSwitcher from "@/components/Header/HeaderSwitcher";
 import { getHeaderSettings } from "@/get-api-data/header-setting";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 
@@ -25,7 +26,7 @@ export default async function SiteLayout({
             showSpinner={false}
             shadow="none"
           />
-          <MainHeader headerData={headerSettingData} />
+          <HeaderSwitcher headerData={headerSettingData} />
           <Breadcrumb />
           <Toaster position="top-center" reverseOrder={false} />
           {children}

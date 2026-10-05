@@ -2,82 +2,44 @@ import type { MenuItem } from "./types";
 
 export const menuData: MenuItem[] = [
   {
-    title: "Popular",
-    path: "/popular?sort=popular",
+    title: "Home",
+    path: "/",
   },
   {
     title: "Shop",
-    path: "/shop-with-sidebar",
-  },
-
-  {
-    title: "Pages",
-    submenu: [
-      {
-        title: "Shop without sidebar",
-        path: "/shop-without-sidebar",
-      },
-      {
-        title: "Checkout",
-        path: "/checkout",
-      },
-      {
-        title: "Cart",
-        path: "/cart",
-      },
-      {
-        title: "Wishlist",
-        path: "/wishlist",
-      },
-      {
-        title: "Sign in",
-        path: "/signin",
-      },
-      {
-        title: "Sign up",
-        path: "/signup",
-      },
-      {
-        title: "Error",
-        path: "/error",
-      },
-      {
-        title: "Mail Success",
-        path: "/mail-success",
-      },
-      {
-        title:"Privacy Policy",
-        path:"/privacy-policy"
-      },
-      {
-        title:"Terms & Conditions",
-        path:"/terms-conditions"
-      }
-    ],
+    path: "/shop-with-sidebar?category=women",
   },
   {
-    title: "Blog",
+    title: "Categories",
     submenu: [
       {
-        title: "Blog Grid with Sidebar",
-        path: "/blogs/blog-grid-with-sidebar",
+        title: "Women",
+        path: "/shop-with-sidebar?category=women",
       },
       {
-        title: "Blog Grid",
-        path: "/blogs/blog-grid",
+        title: "Men",
+        path: "/shop-with-sidebar?category=men",
       },
       {
-        title: "Blog details with sidebar",
-        path: "/blogs/blog-details-with-sidebar",
-      },
-      {
-        title: "Blog Details",
-        path: "/blogs/blog-details",
+        title: "Accessories",
+        path: "/shop-with-sidebar?category=accessories",
       },
     ],
   },
   {
-    title: "Contact",
-    path: "/contact",
+    title: "Sale",
+    path: "/shop-with-sidebar?category=women",
+  },
+  {
+    title: "Products",
+    path: "/shop-with-sidebar?category=men",
+  },
+  {
+    title: "Top Deals",
+    path: "/shop-with-sidebar?category=women",
+  },
+  {
+    title: "Elements",
+    path: "/shop-with-sidebar?category=accessories",
   },
 ];
