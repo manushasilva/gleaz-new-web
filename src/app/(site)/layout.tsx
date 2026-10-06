@@ -8,6 +8,7 @@ import MainHeader from "@/components/Header/MainHeader";
 import HeaderSwitcher from "@/components/Header/HeaderSwitcher";
 import { getHeaderSettings } from "@/get-api-data/header-setting";
 import Breadcrumb from "@/components/Common/Breadcrumb";
+import SupportChat from "@/components/Common/SupportChat";
 
 export default async function SiteLayout({
   children,
@@ -30,6 +31,7 @@ export default async function SiteLayout({
           <Breadcrumb />
           <Toaster position="top-center" reverseOrder={false} />
           {children}
+          <SupportChat />
         </Providers>
 
         <ScrollToTop />
