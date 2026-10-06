@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 
 const formatProductBadge = (badge?: string) => {
   const cleanBadge = (badge || "In stock").trim();
@@ -36,7 +36,7 @@ const parsePrice = (value: string) => {
 const toggleValue = (value: string, list: string[]) =>
   list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
 
-export default function ShopWithSidebarPage() {
+function ShopWithSidebarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = (searchParams.get("q") || "").trim().toLowerCase();
@@ -289,5 +289,13 @@ export default function ShopWithSidebarPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ShopWithSidebarPage() {
+  return (
+    <Suspense fallback={<div className="py-24 text-center text-sm text-[#7a7a7a]">Loading shop...</div>}>
+      <ShopWithSidebarContent />
+    </Suspense>
   );
 }
