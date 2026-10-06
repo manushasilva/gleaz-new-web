@@ -10,10 +10,12 @@ import { calculateDiscountPercentage } from "@/utils/calculateDiscountPercentage
 import { formatPrice } from "@/utils/formatePrice";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import CheckoutBtn from "../Shop/CheckoutBtn";
 import WishlistButton from "../Wishlist/AddWishlistButton";
+import SizeChartModal from "./SizeChartModal";
 import Tooltip from "./Tooltip";
 
 type Props = {
@@ -30,6 +32,7 @@ const ProductItem = ({ item, bgClr = "[#F6F7FB]" }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
 
   const { addItem, cartDetails } = useCart();
+  const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
 
   const isAlradyAdded = Object.values(cartDetails ?? {}).some(
     (cartItem) => cartItem.id === item.id
@@ -150,16 +153,28 @@ const ProductItem = ({ item, bgClr = "[#F6F7FB]" }: Props) => {
         </Link>
       </h3>
 
-      <span className="flex items-center gap-2 text-base font-medium">
-        {item.discountedPrice && (
-          <span className="line-through text-dark-4">
-            {formatPrice(item.price)}
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-2 text-base font-medium">
+          {item.discountedPrice && (
+            <span className="line-through text-dark-4">
+              {formatPrice(item.price)}
+            </span>
+          )}
+          <span className="text-dark">
+            {formatPrice(item.discountedPrice || item.price)}
           </span>
-        )}
-        <span className="text-dark">
-          {formatPrice(item.discountedPrice || item.price)}
         </span>
-      </span>
+
+        <button
+          type="button"
+          onClick={() => setIsSizeChartOpen(true)}
+          className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#111111] underline-offset-4 hover:underline"
+        >
+          Size Chart
+        </button>
+      </div>
+
+      <SizeChartModal isOpen={isSizeChartOpen} onClose={() => setIsSizeChartOpen(false)} />
     </div>
   );
 };

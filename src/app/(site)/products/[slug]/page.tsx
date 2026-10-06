@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useCart } from "@/hooks/useCart";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 import { useAppSelector } from "@/redux/store";
+import SizeChartModal from "@/components/Common/SizeChartModal";
 
 type StoreProduct = {
   id: string;
@@ -29,12 +30,11 @@ const fallbackDetails = [
   { label: "Delivery", value: "2-4 working days" },
 ];
 
-const sizeChartRows = [
-  { size: "XS", chest: "31-33 in", waist: "24-26 in", hips: "34-36 in" },
-  { size: "S", chest: "33-35 in", waist: "26-28 in", hips: "36-38 in" },
-  { size: "M", chest: "35-37 in", waist: "28-30 in", hips: "38-40 in" },
-  { size: "L", chest: "37-39 in", waist: "30-32 in", hips: "40-42 in" },
-  { size: "XL", chest: "39-41 in", waist: "32-34 in", hips: "42-44 in" },
+const shoppingBenefits = [
+  { title: "Free Shipping", detail: "On orders over LKR 4,500" },
+  { title: "Easy Returns", detail: "14-day hassle-free return policy" },
+  { title: "Secure Checkout", detail: "Protected payments and privacy" },
+  { title: "Fit Guarantee", detail: "Size chart and fit support" },
 ];
 
 export default function ProductDetailPage() {
@@ -334,10 +334,10 @@ export default function ProductDetailPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowSizeChart((open) => !open)}
+                  onClick={() => setShowSizeChart(true)}
                   className="text-xs font-medium uppercase tracking-[0.12em] text-[#111111] underline-offset-4 hover:underline"
                 >
-                  {showSizeChart ? "Hide chart" : "Size chart"}
+                  Size chart
                 </button>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -356,33 +356,6 @@ export default function ProductDetailPage() {
                   </button>
                 ))}
               </div>
-
-              {showSizeChart && (
-                <div className="mt-4 overflow-hidden rounded-[12px] border border-[#e5e1dc] bg-[#f8f6f3]">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-left text-sm text-[#111111]">
-                      <thead className="bg-[#f1eee9] text-[0.7rem] uppercase tracking-[0.12em] text-[#5f5d5a]">
-                        <tr>
-                          <th className="px-4 py-3 font-medium">Size</th>
-                          <th className="px-4 py-3 font-medium">Chest</th>
-                          <th className="px-4 py-3 font-medium">Waist</th>
-                          <th className="px-4 py-3 font-medium">Hips</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sizeChartRows.map((row) => (
-                          <tr key={row.size} className="border-t border-[#e5e1dc]">
-                            <td className="px-4 py-3 font-medium">{row.size}</td>
-                            <td className="px-4 py-3">{row.chest}</td>
-                            <td className="px-4 py-3">{row.waist}</td>
-                            <td className="px-4 py-3">{row.hips}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -444,6 +417,18 @@ export default function ProductDetailPage() {
             Buy now
           </button>
 
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            {shoppingBenefits.map((benefit) => (
+              <div key={benefit.title} className="rounded-[12px] border border-[#e5e1dc] bg-[#f8f6f3] p-3">
+                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#111111] text-xs font-bold text-white">
+                  ✓
+                </div>
+                <div className="text-sm font-semibold text-[#111111]">{benefit.title}</div>
+                <div className="mt-1 text-xs leading-5 text-[#5e5c59]">{benefit.detail}</div>
+              </div>
+            ))}
+          </div>
+
           <div className="mt-8 space-y-3 rounded-[12px] border border-[#e5e1dc] bg-[#faf9f7] p-4">
             {fallbackDetails.map((detail) => (
               <div key={detail.label} className="flex items-center justify-between gap-4 border-b border-[#ece7e1] pb-2 last:border-b-0 last:pb-0">
@@ -467,6 +452,8 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      <SizeChartModal isOpen={showSizeChart} onClose={() => setShowSizeChart(false)} />
     </main>
   );
 }
