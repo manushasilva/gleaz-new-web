@@ -29,6 +29,14 @@ const fallbackDetails = [
   { label: "Delivery", value: "2-4 working days" },
 ];
 
+const sizeChartRows = [
+  { size: "XS", chest: "31-33 in", waist: "24-26 in", hips: "34-36 in" },
+  { size: "S", chest: "33-35 in", waist: "26-28 in", hips: "36-38 in" },
+  { size: "M", chest: "35-37 in", waist: "28-30 in", hips: "38-40 in" },
+  { size: "L", chest: "37-39 in", waist: "30-32 in", hips: "40-42 in" },
+  { size: "XL", chest: "39-41 in", waist: "32-34 in", hips: "42-44 in" },
+];
+
 export default function ProductDetailPage() {
   const router = useRouter();
   const params = useParams<{ slug?: string | string[] }>();
@@ -39,6 +47,7 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [showSizeChart, setShowSizeChart] = useState(false);
 
   const safeSlug = useMemo(() => {
     const slugValue = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
@@ -319,8 +328,17 @@ export default function ProductDetailPage() {
 
           {product.sizes && product.sizes.length > 0 && (
             <div className="mt-8">
-              <div className="mb-3 text-sm font-medium uppercase tracking-[0.12em] text-[#111111]">
-                Size
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="text-sm font-medium uppercase tracking-[0.12em] text-[#111111]">
+                  Size
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSizeChart((open) => !open)}
+                  className="text-xs font-medium uppercase tracking-[0.12em] text-[#111111] underline-offset-4 hover:underline"
+                >
+                  {showSizeChart ? "Hide chart" : "Size chart"}
+                </button>
               </div>
               <div className="flex flex-wrap gap-3">
                 {product.sizes.map((size) => (
@@ -338,6 +356,33 @@ export default function ProductDetailPage() {
                   </button>
                 ))}
               </div>
+
+              {showSizeChart && (
+                <div className="mt-4 overflow-hidden rounded-[12px] border border-[#e5e1dc] bg-[#f8f6f3]">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left text-sm text-[#111111]">
+                      <thead className="bg-[#f1eee9] text-[0.7rem] uppercase tracking-[0.12em] text-[#5f5d5a]">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Size</th>
+                          <th className="px-4 py-3 font-medium">Chest</th>
+                          <th className="px-4 py-3 font-medium">Waist</th>
+                          <th className="px-4 py-3 font-medium">Hips</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sizeChartRows.map((row) => (
+                          <tr key={row.size} className="border-t border-[#e5e1dc]">
+                            <td className="px-4 py-3 font-medium">{row.size}</td>
+                            <td className="px-4 py-3">{row.chest}</td>
+                            <td className="px-4 py-3">{row.waist}</td>
+                            <td className="px-4 py-3">{row.hips}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
