@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -37,6 +36,26 @@ const shoppingBenefits = [
   { title: "Fit Guarantee", detail: "Size chart and fit support" },
 ];
 
+const getBusinessDayRange = () => {
+  const addBusinessDays = (start: Date, days: number) => {
+    const date = new Date(start);
+    let addedDays = 0;
+
+    while (addedDays < days) {
+      date.setDate(date.getDate() + 1);
+      if (date.getDay() !== 0 && date.getDay() !== 6) addedDays += 1;
+    }
+
+    return date;
+  };
+
+  const formatDate = (date: Date) =>
+    new Intl.DateTimeFormat("en-LK", { day: "numeric", month: "short" }).format(date);
+
+  const today = new Date();
+  return `${formatDate(addBusinessDays(today, 2))} – ${formatDate(addBusinessDays(today, 4))}`;
+};
+
 export default function ProductDetailPage() {
   const router = useRouter();
   const params = useParams<{ slug?: string | string[] }>();
@@ -48,6 +67,8 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showSizeChart, setShowSizeChart] = useState(false);
+  const [deliveryEstimate, setDeliveryEstimate] = useState("");
+  const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0 });
 
   const safeSlug = useMemo(() => {
     const slugValue = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
@@ -72,10 +93,49 @@ export default function ProductDetailPage() {
     loadProducts();
   }, []);
 
+  useEffect(() => {
+    setDeliveryEstimate(getBusinessDayRange());
+  }, []);
+
   const product = useMemo(
     () => products.find((item) => item.slug === safeSlug) ?? null,
     [products, safeSlug],
   );
+
+  useEffect(() => {
+    if (!product?.slug) {
+      setReviewSummary({ average: 0, count: 0 });
+      return;
+    }
+
+    const controller = new AbortController();
+    const loadReviews = async () => {
+      try {
+        const response = await fetch("/api/review", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productSlug: product.slug }),
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Unable to load reviews.");
+        const result = await response.json();
+        const reviews = Array.isArray(result.review) ? result.review : [];
+        const ratings = reviews
+          .map((review: { rating?: unknown }) => Number(review.rating))
+          .filter((rating: number) => Number.isFinite(rating) && rating >= 1 && rating <= 5);
+
+        setReviewSummary({
+          average: ratings.length ? ratings.reduce((total: number, rating: number) => total + rating, 0) / ratings.length : 0,
+          count: ratings.length,
+        });
+      } catch (error) {
+        if (!controller.signal.aborted) setReviewSummary({ average: 0, count: 0 });
+      }
+    };
+
+    loadReviews();
+    return () => controller.abort();
+  }, [product?.slug]);
 
   useEffect(() => {
     const availableColors = product?.colors && product.colors.length ? product.colors : product?.tone ? [product.tone] : [];
@@ -131,6 +191,29 @@ export default function ProductDetailPage() {
       quantity,
       color: selectedColor,
     });
+  };
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: product?.name, url: shareUrl });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Product link copied.");
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== "AbortError") {
+        toast.error("Unable to share this product.");
+      }
+    }
+  };
+
+  const handleClearSelections = () => {
+    const availableColors = product?.colors?.length ? product.colors : product?.tone ? [product.tone] : [];
+    setSelectedSize(product?.sizes?.[0] || "");
+    setSelectedColor(availableColors[0] || "");
+    setQuantity(1);
   };
 
   const addProductToCart = () => {
@@ -238,7 +321,7 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <main className="mx-auto max-w-[1500px] px-4 pb-16 pt-28 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-[1500px] px-4 pb-28 pt-28 sm:px-6 lg:pb-16 lg:px-8">
       <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-5">
           <div className="grid gap-5 md:grid-cols-[120px_1fr]">
@@ -267,10 +350,10 @@ export default function ProductDetailPage() {
           <div className="flex items-center justify-between rounded-[12px] border border-[#e5e1dc] bg-[#f7f5f2] p-4 text-sm text-[#111111]">
             <span className="inline-flex items-center gap-2">
               <span className="h-5 w-5 rounded-full bg-[#1c8d60]" />
-              10% Original
+              Quality checked
             </span>
-            <span>Lowest Price</span>
-            <span>Free Shipping</span>
+            <span>Easy returns</span>
+            <span>Free shipping over LKR 4,500</span>
           </div>
         </div>
 
@@ -289,6 +372,14 @@ export default function ProductDetailPage() {
           <h1 className="mt-6 text-[2.2rem] font-medium leading-tight text-[#111111]">
             {product.name}
           </h1>
+
+          {reviewSummary.count > 0 && (
+            <div className="mt-3 flex items-center gap-2 text-sm" aria-label={`${reviewSummary.average.toFixed(1)} out of 5 from ${reviewSummary.count} reviews`}>
+              <span className="tracking-[0.12em] text-amber-500" aria-hidden="true">{"★".repeat(Math.round(reviewSummary.average))}{"☆".repeat(5 - Math.round(reviewSummary.average))}</span>
+              <span className="font-semibold text-[#111111]">{reviewSummary.average.toFixed(1)}</span>
+              <span className="text-[#6b6966]">({reviewSummary.count} {reviewSummary.count === 1 ? "review" : "reviews"})</span>
+            </div>
+          )}
 
           <div className="mt-5 flex items-center gap-3">
             {Number(product.discountPercentage) > 0 ? (
@@ -314,15 +405,17 @@ export default function ProductDetailPage() {
           <div className="mt-8 grid gap-3 rounded-[12px] border border-[#e5e1dc] bg-[#f7f5f2] p-4 sm:grid-cols-3">
             <div>
               <div className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-[#7a7a7a]">Buy</div>
-              <div className="mt-1 text-base font-semibold text-[#111111]">Ready to ship</div>
+              <div className="mt-1 text-base font-semibold text-[#111111]">{product.badge || "Available"}</div>
             </div>
             <div>
               <div className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-[#7a7a7a]">Selling</div>
-              <div className="mt-1 text-base font-semibold text-[#111111]">Best seller</div>
+              <div className="mt-1 text-base font-semibold text-[#111111]">{deliveryEstimate || "2-4 working days"}</div>
             </div>
             <div>
               <div className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-[#7a7a7a]">Offer</div>
-              <div className="mt-1 text-base font-semibold text-[#111111]">10% off today</div>
+              <div className="mt-1 text-base font-semibold text-[#111111]">
+                {Number(product.discountPercentage) > 0 ? `${Math.min(Number(product.discountPercentage), 100)}% off` : "Everyday price"}
+              </div>
             </div>
           </div>
 
@@ -378,7 +471,13 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="mt-8 flex items-center gap-3 text-sm text-[#4d4d4d]">
-            <span className="inline-flex rounded-md border border-[#d9d4cf] bg-white px-3 py-2">× Clear</span>
+            <button
+              type="button"
+              onClick={handleClearSelections}
+              className="inline-flex rounded-md border border-[#d9d4cf] bg-white px-3 py-2 hover:border-[#111111]"
+            >
+              × Reset selections
+            </button>
           </div>
 
           <div className="mt-8 flex items-center gap-3">
@@ -433,13 +532,12 @@ export default function ProductDetailPage() {
             {fallbackDetails.map((detail) => (
               <div key={detail.label} className="flex items-center justify-between gap-4 border-b border-[#ece7e1] pb-2 last:border-b-0 last:pb-0">
                 <span className="text-sm font-medium uppercase tracking-[0.08em] text-[#7a7a7a]">{detail.label}</span>
-                <span className="text-sm text-[#111111]">{detail.value}</span>
+                <span className="text-sm text-[#111111]">{detail.label === "Delivery" && deliveryEstimate ? deliveryEstimate : detail.value}</span>
               </div>
             ))}
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-5 border-t border-[#e5e1dc] pt-6 text-sm uppercase tracking-[0.1em] text-[#111111]">
-            <Link href="#" className="inline-flex items-center gap-2">Compare</Link>
             <button
               type="button"
               onClick={handleWishlistToggle}
@@ -447,10 +545,26 @@ export default function ProductDetailPage() {
             >
               {isInWishlist ? "Saved to Wishlist" : "Wishlist"}
             </button>
-            <Link href="#" className="inline-flex items-center gap-2">Ask us</Link>
-            <Link href="#" className="inline-flex items-center gap-2">Share</Link>
+            <button type="button" onClick={handleShare} className="inline-flex items-center gap-2">Share product</button>
           </div>
         </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-[#e5e1dc] bg-white/95 p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold text-[#111111]">{product.name}</div>
+          <div className="text-sm text-[#5e5c59]">
+            {formatLkrPrice(parsePrice(product.price) * (1 - Number(product.discountPercentage || 0) / 100))}
+            {selectedSize ? ` · ${selectedSize}` : ""}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          className="rounded bg-[#111111] px-5 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-white"
+        >
+          Add to cart
+        </button>
       </div>
 
       <SizeChartModal isOpen={showSizeChart} onClose={() => setShowSizeChart(false)} />
