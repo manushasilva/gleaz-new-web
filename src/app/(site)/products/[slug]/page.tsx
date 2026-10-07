@@ -160,17 +160,6 @@ export default function ProductDetailPage() {
     return `LKR ${new Intl.NumberFormat("en-LK").format(numericValue)}`;
   };
 
-  const isUserLoggedIn = () => {
-    if (typeof window === "undefined") return false;
-
-    try {
-      const user = JSON.parse(localStorage.getItem("gleaz-user") || "null");
-      return Boolean(user?.email);
-    } catch {
-      return false;
-    }
-  };
-
   const gallery = product ? [product.image, product.image, product.image, product.image] : [];
   const isInWishlist = Boolean(product && wishlistItems.some((item) => item.id === product.id));
 
@@ -260,12 +249,6 @@ export default function ProductDetailPage() {
   };
 
   const handleBuyNow = () => {
-    if (!isUserLoggedIn()) {
-      toast.error("Please sign in to buy this product.");
-      router.push("/signin");
-      return;
-    }
-
     if (!product) return;
 
     const availableColors = product.colors && product.colors.length ? product.colors : product.tone ? [product.tone] : [];
