@@ -68,6 +68,12 @@ EMAIL_SERVER_USER="resend"
 EMAIL_SERVER_PASSWORD="your_resend_api_key"
 EMAIL_FROM="your_email"
 ADMIN_EMAILS="admin@example.com"
+WHATSAPP_ACCESS_TOKEN="your_meta_whatsapp_cloud_api_access_token"
+WHATSAPP_PHONE_NUMBER_ID="your_meta_whatsapp_business_phone_number_id"
+WHATSAPP_GRAPH_API_VERSION="v23.0"
+# Optional: use an approved template to send outside WhatsApp's 24-hour customer service window
+WHATSAPP_ORDER_TEMPLATE_NAME="your_approved_order_template"
+WHATSAPP_ORDER_TEMPLATE_LANGUAGE="en_US"
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your_cloudinary_cloud_name"
 CLOUDINARY_API_KEY="your_cloudinary_api_key"
 CLOUDINARY_API_SECRET="your_cloudinary_api_secret"
@@ -77,6 +83,8 @@ FORMBOLD_FORM_ID="your_formbold_form_id"
 ```
 
 > ⚠️ **Important:** Replace the placeholder values with your actual API keys and credentials. Never commit your `.env` file to version control to protect sensitive data.
+
+Order notifications are sent server-side through the [WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api/). Add a valid access token and business phone number ID above. Without an approved template, WhatsApp only permits free-form messages during an active 24-hour customer service window. To send notifications outside that window, configure an approved template whose body has four text placeholders in this order: customer name, customer phone, order total, and order details.
 
 ---
 

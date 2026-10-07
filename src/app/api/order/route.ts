@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendOrderEmail } from "@/utils/sendOrderEmail";
+import { sendOrderWhatsApp } from "@/utils/sendOrderWhatsApp";
 import { saveOrder } from "@/lib/storeData";
 
 export const runtime = "nodejs";
@@ -62,7 +63,29 @@ export async function POST(req: NextRequest) {
       console.warn("Order saved, but email notification failed:", emailError);
     }
 
-    return NextResponse.json({ success: true, message: "Order sent successfully." }, { status: 200 });
+    let whatsappSent = false;
+    try {
+      await sendOrderWhatsApp({
+        customerName,
+        email,
+        phone,
+        address,
+        city,
+        postalCode,
+        country,
+        notes,
+        items,
+        orderTotal: Number(orderTotal || 0),
+      });
+      whatsappSent = true;
+    } catch (whatsappError) {
+      console.warn("Order saved, but WhatsApp notification failed:", whatsappError);
+    }
+
+    return NextResponse.json(
+      { success: true, whatsappSent, message: "Order sent successfully." },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error("Order failed:", error);
     return NextResponse.json(

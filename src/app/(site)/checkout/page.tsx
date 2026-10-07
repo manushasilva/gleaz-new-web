@@ -24,6 +24,7 @@ export default function CheckoutPage() {
   const items = useMemo(() => Object.values(cartDetails ?? {}), [cartDetails]);
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
+  const [orderComplete, setOrderComplete] = useState<{ whatsappSent: boolean } | null>(null);
 
   const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
 
@@ -67,7 +68,12 @@ export default function CheckoutPage() {
         throw new Error(result?.error || "Unable to place your order.");
       }
 
-      toast.success("Order placed successfully. We will contact you soon.");
+      setOrderComplete({ whatsappSent: Boolean(result?.whatsappSent) });
+      if (result?.whatsappSent) {
+        toast.success("Order placed and WhatsApp notification sent.");
+      } else {
+        toast.error("Order placed, but the WhatsApp notification could not be sent.");
+      }
       setForm(initialForm);
       clearCart();
     } catch (error: any) {
@@ -76,6 +82,22 @@ export default function CheckoutPage() {
       setSubmitting(false);
     }
   };
+
+  if (orderComplete) {
+    return (
+      <section className="bg-gray-1 px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+        <div className="mx-auto max-w-xl rounded-3xl border border-gray-3 bg-white px-6 py-10 text-center shadow-1 sm:px-10">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-light-6 text-green-dark">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-8 w-8"><path d="m5 12.5 4.5 4.5L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </div>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-green-dark">Order received</p>
+          <h1 className="mt-3 text-3xl font-bold text-dark sm:text-4xl">Thank you!</h1>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-body">Your order has been placed. {orderComplete.whatsappSent ? "The order details were automatically sent to 0754081108 on WhatsApp." : "We could not send the WhatsApp notification. Please contact 0754081108 with your order details."}</p>
+          <Link href="/shop-with-sidebar?category=women" className="mt-6 inline-flex text-sm font-semibold text-blue hover:text-blue-dark">Continue shopping</Link>
+        </div>
+      </section>
+    );
+  }
 
   if (!items.length) {
     return (
