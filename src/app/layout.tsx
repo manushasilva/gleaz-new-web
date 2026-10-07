@@ -2,11 +2,23 @@ import "./css/style.css";
 import { Metadata } from "next";
 import { getSeoSettings, getSiteName } from "@/get-api-data/seo-setting";
 import { GoogleTagManager } from '@next/third-parties/google';
-import { DM_Sans } from 'next/font/google'
+import { DM_Sans, Pacifico, Montserrat } from 'next/font/google'
 
 const dm_sans = DM_Sans({
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
   variable: "--font-body",
+  subsets: ['latin'],
+})
+
+const pacifico = Pacifico({
+  weight: '400',
+  variable: '--font-hero',
+  subsets: ['latin'],
+})
+
+const montserrat = Montserrat({
+  weight: ['300','400','600','700','800'],
+  variable: '--font-display',
   subsets: ['latin'],
 })
 
@@ -36,7 +48,7 @@ export default async function RootLayout({
   const seoSettings = await getSeoSettings();
   return (
     <html lang="en">
-      <body suppressHydrationWarning={true} className={dm_sans.variable}>
+      <body suppressHydrationWarning={true} className={`${dm_sans.variable} ${pacifico.variable} ${montserrat.variable}`}>
         {children}
         {seoSettings?.gtmId && <GoogleTagManager gtmId={seoSettings.gtmId} />}
       </body>

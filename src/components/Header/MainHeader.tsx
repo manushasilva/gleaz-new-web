@@ -108,8 +108,8 @@ const MainHeader = ({ headerData }: IProps) => {
   return (
     <>
       <header className="fixed left-0 top-0 z-50 w-full bg-white text-[#111111] shadow-sm">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="text-[2.3rem] font-black uppercase tracking-[-0.08em] text-[#111111]">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:gap-4 lg:px-8">
+          <div className="text-[1.7rem] font-black uppercase tracking-[-0.08em] text-[#111111] sm:text-[2.1rem] lg:text-[2.3rem]">
             GLEAZ
           </div>
 
@@ -117,11 +117,11 @@ const MainHeader = ({ headerData }: IProps) => {
             <DesktopMenu menuData={menuData} stickyMenu={stickyMenu} />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setSearchModalOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9d7d2] bg-white text-[#111111] shadow-sm transition hover:border-[#111111]"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d9d7d2] bg-white text-[#111111] shadow-sm transition hover:border-[#111111] sm:h-10 sm:w-10"
               aria-label="Open search"
             >
               <SearchIcon />

@@ -18,23 +18,23 @@ const formatLkrPrice = (rawValue: string | number) => {
 
 const ProductGrid = ({ title, products, category }: { title: string; products: StoreProduct[]; category?: "women" | "men" | "accessories" }) => (
   <section className="mx-auto max-w-[1600px] px-4 pb-10 pt-8 sm:px-6 lg:px-8">
-    <div className="mb-6 flex items-end justify-between gap-4">
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a7a7a]">Collection</p>
-        <h2 className="mt-2 text-[2.4rem] font-light uppercase tracking-[-0.06em] text-[#111111]">{title}</h2>
+        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#7a7a7a] sm:text-xs">Collection</p>
+        <h2 className="mt-2 text-[1.8rem] font-light uppercase tracking-[-0.06em] text-[#111111] sm:text-[2.2rem] lg:text-[2.6rem]">{title}</h2>
       </div>
 
       {category && (
         <Link
           href={`/shop-with-sidebar?category=${category}`}
-          className="inline-flex items-center gap-2 border border-[#d9d7d2] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#111111] transition hover:bg-[#111111] hover:text-white"
+          className="inline-flex items-center gap-2 self-start border border-[#d9d7d2] bg-white px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#111111] transition hover:bg-[#111111] hover:text-white sm:self-auto sm:text-xs"
         >
           See more
         </Link>
       )}
     </div>
 
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
       {products.map((product) => (
         <Link key={`${category}-${product.id || product.slug}`} href={`/products/${product.slug}`} className="group block">
           <article>
@@ -103,55 +103,57 @@ const Home = async () => {
   ];
 
   return (
-    <main id="top" className="min-h-screen bg-[#f4f4f2] text-[#111111]">
-      <section className="mx-auto mt-24 max-w-[1600px] overflow-hidden bg-[#f2f0ee] px-0 pb-12 pt-0">
-        <div className="relative min-h-[700px] bg-[#f4f2ef]">
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-90"
-            style={{ backgroundImage: `url(${landing.heroImage})` }}
+    <main id="top" className="min-h-screen bg-[#f4f4f2] text-[#111111] pt-20 lg:pt-24">
+      <section className="w-full overflow-hidden bg-[#f2f0ee] px-0 pb-0 pt-0">
+        <div className="relative h-[82vh] min-h-[560px] w-full overflow-hidden bg-[#f4f2ef]">
+          <Image
+            src={landing.heroImage}
+            alt={landing.heroTitle || "hero"}
+            fill
+            priority
+            className="h-full w-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.78),rgba(0,0,0,0.38)_24%,rgba(0,0,0,0.16)_48%,rgba(0,0,0,0.22)_100%)]" />
 
-          <div className="relative z-10 flex h-full min-h-[700px] items-center justify-start px-6 sm:px-10 lg:px-16">
-            <div className="max-w-[520px] text-left text-white">
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0.08)_24%,rgba(147,170,198,0.22)_58%,rgba(147,170,198,0.58)_100%)]" />
+
+          <div className="absolute inset-0 flex items-center justify-end px-4 sm:px-8 lg:px-12">
+            <div className="max-w-[680px] text-left text-[#111111]">
               {landing.heroBadge && (
-                <div className="mb-5 inline-flex rounded-full border border-white/40 bg-white/10 px-4 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-white backdrop-blur-sm">
+                <div className="mb-4 inline-flex rounded-full border border-black/10 bg-white/20 px-3 py-2 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-[#111] backdrop-blur-sm sm:mb-5 sm:px-4 sm:text-[0.7rem]">
                   {landing.heroBadge}
                 </div>
               )}
-              <h1 className="font-[cursive] text-[4.5rem] leading-[0.9] tracking-[-0.06em] sm:text-[6rem]">
-                {landing.heroTitle}
-                <span className="mt-2 block text-[2.4rem] tracking-[0.12em] sm:text-[3.2rem]">{landing.heroSubtitle}</span>
+
+              <h1 className="text-[2.8rem] leading-[0.72] tracking-[-0.07em] text-[#111111] sm:text-[4.1rem] md:text-[5.3rem] lg:text-[6.4rem]" style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}>
+                <span className="block">Designed</span>
+                <span className="mt-1 block">for you</span>
+                <span className="mt-6 block text-[0.95rem] tracking-[-0.03em] text-[#4a4a4a] sm:text-[1.5rem] md:text-[2rem] lg:text-[2.5rem]" style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}>
+                  {landing.heroSubtitle}
+                </span>
               </h1>
+
               <Link
                 href={landing.ctaLink}
-                className="mt-8 inline-flex border border-white/80 bg-transparent px-8 py-4 text-base font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-[#111111]"
+                className="mt-6 inline-flex border border-[#111] bg-white/80 px-6 py-3 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[#111] transition hover:bg-white sm:mt-8 sm:px-8 sm:py-4 sm:text-base"
               >
                 {landing.ctaText}
               </Link>
             </div>
           </div>
-
-          <button className="absolute left-6 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-2xl text-white backdrop-blur-sm">
-            ‹
-          </button>
-          <button className="absolute right-6 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-2xl text-white backdrop-blur-sm">
-            ›
-          </button>
         </div>
       </section>
 
-      <section aria-label="Shopping benefits" className="mx-auto grid max-w-[1600px] gap-px border-y border-[#e5e1dc] bg-[#e5e1dc] sm:grid-cols-3">
+      <section aria-label="Shopping benefits" className="mx-auto grid max-w-[1600px] gap-px border-y border-[#e5e1dc] bg-[#e5e1dc] grid-cols-1 sm:grid-cols-3">
         {[
           { title: "Free delivery", detail: "On orders over LKR 4,500", icon: "↗" },
           { title: "Easy returns", detail: "14-day hassle-free returns", icon: "↺" },
           { title: "Secure checkout", detail: "Your payment details stay protected", icon: "✓" },
         ].map((benefit) => (
-          <div key={benefit.title} className="flex items-center gap-4 bg-[#f8f7f5] px-6 py-5 sm:justify-center">
-            <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9d7d2] text-lg text-[#111111]">{benefit.icon}</span>
+          <div key={benefit.title} className="flex items-center gap-3 bg-[#f8f7f5] px-4 py-4 sm:justify-center sm:gap-4 sm:px-6 sm:py-5">
+            <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d9d7d2] text-base text-[#111111] sm:h-10 sm:w-10 sm:text-lg">{benefit.icon}</span>
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-[#111111]">{benefit.title}</h2>
-              <p className="mt-1 text-xs text-[#686662]">{benefit.detail}</p>
+              <h2 className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-[#111111] sm:text-sm">{benefit.title}</h2>
+              <p className="mt-1 text-[0.62rem] text-[#686662] sm:text-xs">{benefit.detail}</p>
             </div>
           </div>
         ))}

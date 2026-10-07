@@ -98,13 +98,19 @@
     }
   ],
   "landing": {
-    "heroTitle": "The Cotton",
-    "heroSubtitle": "MUSE",
-    "heroImage": "/images/products/1789496606840-article_full_1x.jpg",
-    "heroBadge": "New Edit",
+    "heroTitle": "Designed for you",
+    "heroSubtitle": "Trusted by All",
+    "heroImage": "/images/products/1791309137479-Banner_1.png",
+    "heroBadge": "ssd",
     "ctaText": "Shop now",
     "ctaLink": "/shop-with-sidebar?category=women",
     "womenSectionTitle": "Women",
     "menSectionTitle": "Men"
+  },
+  "footer": {
+    "address": "No 63/9/1 Heendeniya Veyangoda",
+    "phone": "",
+    "email": "",
+    "copyright": ""
   }
 }

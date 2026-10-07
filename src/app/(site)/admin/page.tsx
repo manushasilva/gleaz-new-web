@@ -91,9 +91,24 @@ export default function AdminPage() {
     }
   };
 
+  const [footerForm, setFooterForm] = useState({ address: "", phone: "", email: "", copyright: "" });
+  const [footerLoading, setFooterLoading] = useState(false);
+
+  const loadFooterSettings = async () => {
+    try {
+      const response = await fetch("/api/admin/footer");
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || "Unable to load footer settings.");
+      setFooterForm({ address: result.footer?.address || "", phone: result.footer?.phone || "", email: result.footer?.email || "", copyright: result.footer?.copyright || "" });
+    } catch (error: any) {
+      toast.error(error?.message || "Unable to load footer settings.");
+    }
+  };
+
   useEffect(() => {
     loadProducts();
     loadLandingSettings();
+    loadFooterSettings();
   }, []);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,6 +255,29 @@ export default function AdminPage() {
       toast.error(error?.message || "Unable to save landing page settings.");
     } finally {
       setLandingLoading(false);
+    }
+  };
+
+  const handleFooterSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFooterLoading(true);
+
+    try {
+      const response = await fetch("/api/admin/footer", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(footerForm),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || "Unable to save footer settings.");
+
+      toast.success(result?.message || "Footer updated successfully.");
+      setFooterForm({ address: result.footer?.address || "", phone: result.footer?.phone || "", email: result.footer?.email || "", copyright: result.footer?.copyright || "" });
+    } catch (error: any) {
+      toast.error(error?.message || "Unable to save footer settings.");
+    } finally {
+      setFooterLoading(false);
     }
   };
 
@@ -546,6 +584,65 @@ export default function AdminPage() {
               className="mt-6 inline-flex w-full items-center justify-center rounded bg-[#111111] px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {landingLoading ? "Saving..." : "Save landing page"}
+            </button>
+          </form>
+
+          <form onSubmit={handleFooterSubmit} className="rounded-[16px] border border-[#e7e3df] bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#7a7a7a]">Footer</p>
+                <h2 className="mt-2 text-2xl font-bold text-[#111111]">Footer content</h2>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-[#111111]">Address</label>
+                <input
+                  value={footerForm.address}
+                  onChange={(e) => setFooterForm({ ...footerForm, address: e.target.value })}
+                  className="w-full rounded-md border border-[#d7d4cf] px-3 py-2.5 outline-none focus:border-[#111111]"
+                  placeholder="Address"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#111111]">Phone</label>
+                <input
+                  value={footerForm.phone}
+                  onChange={(e) => setFooterForm({ ...footerForm, phone: e.target.value })}
+                  className="w-full rounded-md border border-[#d7d4cf] px-3 py-2.5 outline-none focus:border-[#111111]"
+                  placeholder="Phone"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#111111]">Email</label>
+                <input
+                  value={footerForm.email}
+                  onChange={(e) => setFooterForm({ ...footerForm, email: e.target.value })}
+                  className="w-full rounded-md border border-[#d7d4cf] px-3 py-2.5 outline-none focus:border-[#111111]"
+                  placeholder="Email"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-[#111111]">Copyright text</label>
+                <input
+                  value={footerForm.copyright}
+                  onChange={(e) => setFooterForm({ ...footerForm, copyright: e.target.value })}
+                  className="w-full rounded-md border border-[#d7d4cf] px-3 py-2.5 outline-none focus:border-[#111111]"
+                  placeholder="© 2024 Your Company. All rights reserved."
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={footerLoading}
+              className="mt-6 inline-flex w-full items-center justify-center rounded bg-[#111111] px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {footerLoading ? "Saving..." : "Save footer"}
             </button>
           </form>
 

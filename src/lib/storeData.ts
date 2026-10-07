@@ -57,11 +57,19 @@ export type LandingSettings = {
   menSectionTitle: string;
 };
 
+export type FooterSettings = {
+  address?: string;
+  phone?: string;
+  email?: string;
+  copyright?: string;
+};
+
 export type StoreData = {
   users: StoreUser[];
   products: StoreProduct[];
   orders: StoreOrder[];
   landing: LandingSettings;
+  footer?: FooterSettings;
 };
 
 const defaultProducts: StoreProduct[] = [
@@ -142,6 +150,12 @@ const defaultData: StoreData = {
   products: defaultProducts,
   orders: [],
   landing: defaultLandingSettings,
+  footer: {
+    address: "685 Market Street,Las Vegas, LA 95820,United States.",
+    phone: "+(099) 532-786-9843",
+    email: "support@example.com",
+    copyright: `© ${new Date().getFullYear()}. All rights reserved.`,
+  },
 };
 
 async function ensureStore() {
@@ -173,6 +187,9 @@ export async function readStore(): Promise<StoreData> {
         ...defaultLandingSettings,
         ...(parsed.landing && typeof parsed.landing === "object" ? parsed.landing : {}),
       },
+      footer: {
+        ...(parsed.footer && typeof parsed.footer === "object" ? parsed.footer : {}),
+      },
     };
   } catch {
     await fs.writeFile(DATA_FILE, JSON.stringify(defaultData, null, 2), "utf8");
@@ -203,6 +220,24 @@ export async function getLandingSettings() {
     ...defaultLandingSettings,
     ...(store.landing || {}),
   };
+}
+
+export async function getFooterSettings() {
+  const store = await readStore();
+  return {
+    ...(store.footer || {}),
+  };
+}
+
+export async function saveFooterSettings(settings: Partial<FooterSettings>) {
+  const store = await readStore();
+  const nextFooter = {
+    ...(store.footer || {}),
+    ...settings,
+  };
+
+  await writeStore({ ...store, footer: nextFooter });
+  return nextFooter;
 }
 
 export async function saveLandingSettings(settings: Partial<LandingSettings>) {
@@ -244,6 +279,9 @@ export async function ensureDefaultAdminUser() {
     landing: {
       ...defaultLandingSettings,
       ...(existing?.landing && typeof existing.landing === "object" ? existing.landing : {}),
+    },
+    footer: {
+      ...(existing?.footer && typeof existing.footer === "object" ? existing.footer : {}),
     },
   };
 
