@@ -320,6 +320,15 @@ export default function ProductDetailPage() {
     );
   }
 
+  const basePrice = parsePrice(product.price);
+  const discountRate = Math.min(Math.max(Number(product.discountPercentage) || 0, 0), 100) / 100;
+  const currentUnitPrice = Math.round(basePrice * (1 - discountRate));
+  const totalSavings = Math.max(basePrice - currentUnitPrice, 0) * quantity;
+  const shippingThreshold = 4500;
+  const cartLineTotal = currentUnitPrice * quantity;
+  const shippingProgress = Math.min((cartLineTotal / shippingThreshold) * 100, 100);
+  const amountUntilFreeShipping = Math.max(shippingThreshold - cartLineTotal, 0);
+
   return (
     <main className="mx-auto max-w-[1500px] px-4 pb-28 pt-28 sm:px-6 lg:pb-16 lg:px-8">
       <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
@@ -385,9 +394,7 @@ export default function ProductDetailPage() {
             {Number(product.discountPercentage) > 0 ? (
               <>
                 <span className="text-[2rem] font-bold text-[#111111]">
-                  {formatLkrPrice(
-                    parsePrice(product.price) * (1 - Number(product.discountPercentage) / 100)
-                  )}
+                  {formatLkrPrice(currentUnitPrice)}
                 </span>
                 <span className="text-[1.2rem] text-[#7a7a7a] line-through">
                   {formatLkrPrice(product.price)}
@@ -396,6 +403,41 @@ export default function ProductDetailPage() {
             ) : (
               <span className="text-[2rem] font-bold text-[#111111]">{formatLkrPrice(product.price)}</span>
             )}
+          </div>
+
+          {discountRate > 0 && (
+            <p className="mt-2 text-sm font-medium text-[#1e8057]">
+              You save {formatLkrPrice(totalSavings)}{quantity > 1 ? ` on ${quantity} items` : ""}
+            </p>
+          )}
+
+          <div className="mt-5 rounded-xl border border-[#e5e1dc] bg-[#faf9f7] p-4">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="font-semibold text-[#111111]">
+                {amountUntilFreeShipping === 0 ? "Free shipping unlocked" : "You're close to free shipping"}
+              </span>
+              <span className="shrink-0 text-xs font-medium text-[#686662]">
+                {amountUntilFreeShipping === 0 ? "✓ Unlocked" : `${formatLkrPrice(amountUntilFreeShipping)} to go`}
+              </span>
+            </div>
+            <div
+              className="mt-3 h-2 overflow-hidden rounded-full bg-[#e7e3dd]"
+              role="progressbar"
+              aria-label="Progress toward free shipping"
+              aria-valuemin={0}
+              aria-valuemax={shippingThreshold}
+              aria-valuenow={Math.min(cartLineTotal, shippingThreshold)}
+            >
+              <div
+                className="h-full rounded-full bg-[#1c8d60] transition-[width] duration-300"
+                style={{ width: `${shippingProgress}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs leading-5 text-[#686662]">
+              {amountUntilFreeShipping === 0
+                ? "This item qualifies for free shipping."
+                : `Add ${formatLkrPrice(amountUntilFreeShipping)} to your order to qualify.`}
+            </p>
           </div>
 
           <p className="mt-6 text-[1.05rem] leading-8 text-[#4d4d4d]">
@@ -554,7 +596,7 @@ export default function ProductDetailPage() {
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold text-[#111111]">{product.name}</div>
           <div className="text-sm text-[#5e5c59]">
-            {formatLkrPrice(parsePrice(product.price) * (1 - Number(product.discountPercentage || 0) / 100))}
+            {formatLkrPrice(currentUnitPrice)}
             {selectedSize ? ` · ${selectedSize}` : ""}
           </div>
         </div>

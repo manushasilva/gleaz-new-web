@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getLandingSettings, getProducts } from "@/lib/storeData";
 import type { StoreProduct } from "@/lib/storeData";
+import ShopByCategory from "@/components/Home/ShopByCategory";
 
 const formatProductBadge = (badge?: string) => {
   const cleanBadge = (badge || "In stock").trim();
@@ -159,46 +160,7 @@ const Home = async () => {
         ))}
       </section>
 
-      <section className="mx-auto max-w-[1600px] px-4 pb-8 pt-16 sm:px-6 lg:px-8 lg:pt-20">
-        <div className="mb-7">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a7a7a]">Find your next favorite</p>
-          <h2 className="mt-2 text-[2.4rem] font-light uppercase tracking-[-0.06em] text-[#111111]">Shop by category</h2>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((category) => {
-            const categoryProduct = products.find((product) => product.category === category.slug);
-            const image = categoryProduct?.image || category.image;
-            const itemCount = products.filter((product) => product.category === category.slug).length;
-
-            return (
-              <Link
-                key={category.slug}
-                href={`/shop-with-sidebar?category=${category.slug}`}
-                className="group relative isolate flex min-h-[310px] items-end overflow-hidden rounded-[12px] bg-[#e8e3dd] p-6 text-white sm:min-h-[360px]"
-              >
-                <Image
-                  src={image}
-                  alt={categoryProduct?.name || `${category.name} collection`}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover transition duration-700 group-hover:scale-105"
-                />
-                <div aria-hidden="true" className="absolute inset-0 z-10 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-                <div className="relative z-20 flex w-full items-end justify-between gap-4">
-                  <div>
-                    <h3 className="text-3xl font-semibold uppercase tracking-[-0.04em]">{category.name}</h3>
-                    <p className="mt-2 text-sm text-white/85">{category.description}</p>
-                    <p className="mt-3 text-xs uppercase tracking-[0.12em] text-white/75">
-                      {itemCount ? `${itemCount} ${itemCount === 1 ? "style" : "styles"}` : "Explore the collection"}
-                    </p>
-                  </div>
-                  <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/70 text-xl transition group-hover:bg-white group-hover:text-[#111111]">→</span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+      <ShopByCategory categories={categories} products={products} />
 
       <div className="pb-8 pt-10">
         {womenProducts.length > 0 && (
