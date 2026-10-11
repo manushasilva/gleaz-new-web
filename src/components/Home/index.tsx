@@ -1,92 +1,8 @@
+import { getLandingSettings, getProducts } from "@/lib/storeData";
 import Image from "next/image";
 import Link from "next/link";
-import { getLandingSettings, getProducts } from "@/lib/storeData";
-import type { StoreProduct } from "@/lib/storeData";
+import HomeProductCarousel from "@/components/Home/HomeProductCarousel";
 import ShopByCategory from "@/components/Home/ShopByCategory";
-
-const formatProductBadge = (badge?: string) => {
-  const cleanBadge = (badge || "In stock").trim();
-  if (!cleanBadge) return "IN STOCK";
-  if (cleanBadge.startsWith("-")) return `${cleanBadge} OFF`;
-  return cleanBadge.toUpperCase();
-};
-
-const formatLkrPrice = (rawValue: string | number) => {
-  const numericValue = typeof rawValue === "number" ? rawValue : Number(String(rawValue).replace(/[^\d.]/g, ""));
-  if (!Number.isFinite(numericValue)) return "LKR 0";
-  return `LKR ${new Intl.NumberFormat("en-LK").format(numericValue)}`;
-};
-
-const ProductGrid = ({ title, products, category }: { title: string; products: StoreProduct[]; category?: "women" | "men" | "accessories" }) => (
-  <section className="mx-auto max-w-[1600px] px-4 pb-10 pt-8 sm:px-6 lg:px-8">
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#7a7a7a] sm:text-xs">Collection</p>
-        <h2 className="mt-2 text-[1.8rem] font-light uppercase tracking-[-0.06em] text-[#111111] sm:text-[2.2rem] lg:text-[2.6rem]">{title}</h2>
-      </div>
-
-      {category && (
-        <Link
-          href={`/shop-with-sidebar?category=${category}`}
-          className="inline-flex items-center gap-2 self-start border border-[#d9d7d2] bg-white px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#111111] transition hover:bg-[#111111] hover:text-white sm:self-auto sm:text-xs"
-        >
-          See more
-        </Link>
-      )}
-    </div>
-
-    <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-      {products.map((product) => (
-        <Link key={`${category}-${product.id || product.slug}`} href={`/products/${product.slug}`} className="group block">
-          <article>
-            <div className="relative h-[420px] overflow-hidden rounded-[12px] bg-[#efefee]" style={{ backgroundColor: product.tone || "#efefee" }}>
-              <div className="absolute left-4 top-4 z-10 flex h-10 items-center justify-center rounded-full bg-[#111111] px-3 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white">
-                {formatProductBadge(product.badge)}
-              </div>
-              {Number(product.discountPercentage) > 0 && (
-                <div className="absolute right-4 top-4 z-10 flex h-10 items-center justify-center rounded-full bg-[#d94444] px-3 text-[0.7rem] font-bold text-white">
-                  -{Math.min(Number(product.discountPercentage), 100)}%
-                </div>
-              )}
-              <Image
-                src={product.image}
-                alt={product.name}
-                width={800}
-                height={1000}
-                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-                loading="lazy"
-              />
-            </div>
-
-            <div className="mt-5 flex items-center justify-between gap-3 text-[0.9rem] text-[#111111]">
-              <div className="flex-1">
-                <div className="text-[1.05rem] font-medium leading-snug">{product.name}</div>
-                <div className="mt-2 flex items-center gap-2 text-[1.05rem]">
-                  {Number(product.discountPercentage) > 0 ? (
-                    <>
-                      <span className="text-[#7a7a7a] line-through">{formatLkrPrice(product.price)}</span>
-                      <span className="font-bold text-[#111111]">
-                        {formatLkrPrice(
-                          Number(String(product.price).replace(/[^\d.]/g, "")) * (1 - Number(product.discountPercentage) / 100)
-                        )}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="font-bold text-[#111111]">{formatLkrPrice(product.price)}</span>
-                  )}
-                </div>
-              </div>
-              <div className="rounded-full border border-[#d7d5d2] px-2 py-1 text-[0.7rem] uppercase tracking-[0.12em] text-[#111111]">
-                {(product.badge || "In stock").replace('-', '')}
-              </div>
-            </div>
-          </article>
-        </Link>
-      ))}
-    </div>
-  </section>
-);
 
 const Home = async () => {
   const landing = await getLandingSettings();
@@ -97,6 +13,9 @@ const Home = async () => {
     .filter((product) => Number(product.discountPercentage) > 0)
     .sort((first, second) => Number(second.discountPercentage) - Number(first.discountPercentage))
     .slice(0, 4);
+  const latestProducts = [...products]
+    .sort((first, second) => new Date(second.createdAt || 0).getTime() - new Date(first.createdAt || 0).getTime())
+    .slice(0, 8);
   const categories = [
     { name: "Women", slug: "women" as const, image: "/images/categories/categories-01.png", description: "Everyday pieces, made to feel special." },
     { name: "Men", slug: "men" as const, image: "/images/categories/categories-02.png", description: "Easy layers and modern essentials." },
@@ -104,9 +23,9 @@ const Home = async () => {
   ];
 
   return (
-    <main id="top" className="min-h-screen bg-[#f4f4f2] text-[#111111] pt-20 lg:pt-24">
+    <main id="top" className="min-h-screen bg-white pt-20 text-[#111111] lg:pt-24">
       <section className="w-full overflow-hidden bg-[#f2f0ee] px-0 pb-0 pt-0">
-        <div className="relative h-[82vh] min-h-[560px] w-full overflow-hidden bg-[#f4f2ef]">
+        <div className="relative h-[min(78svh,780px)] min-h-[520px] w-full overflow-hidden bg-[#171717]">
           <Image
             src={landing.heroImage}
             alt={landing.heroTitle || "hero"}
@@ -115,73 +34,56 @@ const Home = async () => {
             className="h-full w-full object-cover object-center"
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0.08)_24%,rgba(147,170,198,0.22)_58%,rgba(147,170,198,0.58)_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/10 sm:bg-gradient-to-r sm:from-black/60 sm:via-black/20 sm:to-transparent" />
 
-          <div className="absolute inset-0 flex items-center justify-end px-4 sm:px-8 lg:px-12">
-            <div className="max-w-[680px] text-left text-[#111111]">
+          <div className="absolute inset-0 flex items-end px-5 pb-9 sm:items-center sm:px-10 sm:py-12 lg:px-16">
+            <div className="max-w-2xl text-left text-white">
               {landing.heroBadge && (
-                <div className="mb-4 inline-flex rounded-full border border-black/10 bg-white/20 px-3 py-2 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-[#111] backdrop-blur-sm sm:mb-5 sm:px-4 sm:text-[0.7rem]">
+                <div className="mb-4 inline-flex rounded-full border border-white/40 bg-white/15 px-4 py-2 text-xs font-semibold text-white backdrop-blur-sm sm:mb-6 sm:text-sm">
                   {landing.heroBadge}
                 </div>
               )}
 
-              <h1 className="text-[2.8rem] leading-[0.72] tracking-[-0.07em] text-[#111111] sm:text-[4.1rem] md:text-[5.3rem] lg:text-[6.4rem]" style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}>
-                <span className="block">Designed</span>
-                <span className="mt-1 block">for you</span>
-                <span className="mt-6 block text-[0.95rem] tracking-[-0.03em] text-[#4a4a4a] sm:text-[1.5rem] md:text-[2rem] lg:text-[2.5rem]" style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}>
-                  {landing.heroSubtitle}
-                </span>
+              <h1 className="max-w-[12ch] text-5xl font-bold leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-8xl" style={{ fontFamily: "var(--font-display)" }}>
+                {landing.heroTitle || "Be Better Everyday"}
               </h1>
+              <p className="mt-4 max-w-lg text-base leading-7 text-white/90 sm:mt-5 sm:text-lg">{landing.heroSubtitle || "Comfort-first style for wherever the day takes you."}</p>
 
-              <Link
-                href={landing.ctaLink}
-                className="mt-6 inline-flex border border-[#111] bg-white/80 px-6 py-3 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[#111] transition hover:bg-white sm:mt-8 sm:px-8 sm:py-4 sm:text-base"
-              >
-                {landing.ctaText}
-              </Link>
+              <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
+                <Link href="/shop-with-sidebar?category=men" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#111] transition hover:bg-[#eee] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Shop men <span aria-hidden="true">→</span></Link>
+                <Link href="/shop-with-sidebar?category=women" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-white/80 bg-black/15 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white hover:text-[#111] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Shop women <span aria-hidden="true">→</span></Link>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section aria-label="Shopping benefits" className="mx-auto grid max-w-[1600px] gap-px border-y border-[#e5e1dc] bg-[#e5e1dc] grid-cols-1 sm:grid-cols-3">
+      <HomeProductCarousel title="Shop the latest styles" products={latestProducts} />
+
+      <section className="mx-auto grid max-w-[1600px] gap-4 px-4 py-8 sm:grid-cols-2 sm:px-6 lg:gap-6 lg:px-8">
         {[
-          { title: "Free delivery", detail: "On orders over LKR 4,500", icon: "↗" },
-          { title: "Easy returns", detail: "14-day hassle-free returns", icon: "↺" },
-          { title: "Secure checkout", detail: "Your payment details stay protected", icon: "✓" },
-        ].map((benefit) => (
-          <div key={benefit.title} className="flex items-center gap-3 bg-[#f8f7f5] px-4 py-4 sm:justify-center sm:gap-4 sm:px-6 sm:py-5">
-            <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d9d7d2] text-base text-[#111111] sm:h-10 sm:w-10 sm:text-lg">{benefit.icon}</span>
-            <div>
-              <h2 className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-[#111111] sm:text-sm">{benefit.title}</h2>
-              <p className="mt-1 text-[0.62rem] text-[#686662] sm:text-xs">{benefit.detail}</p>
-            </div>
-          </div>
+          { title: "Find your everyday favorite", label: "WOMEN'S COLLECTION", href: "/shop-with-sidebar?category=women", image: womenProducts[0]?.image || categories[0].image },
+          { title: "Made to move with you", label: "MEN'S COLLECTION", href: "/shop-with-sidebar?category=men", image: menProducts[0]?.image || categories[1].image },
+        ].map((feature) => (
+          <Link key={feature.href} href={feature.href} className="group relative flex min-h-[340px] items-end overflow-hidden rounded-2xl bg-[#222] p-6 text-white sm:min-h-[420px] sm:rounded-3xl sm:p-9">
+            <Image src={feature.image} alt="" fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover transition duration-700 group-hover:scale-[1.03]" />
+            <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+            <span className="relative z-10 max-w-md">
+              <span className="text-xs font-semibold tracking-[0.12em] text-white/80">{feature.label}</span>
+              <span className="mt-2 block text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">{feature.title}</span>
+              <span className="mt-5 inline-flex min-h-11 items-center gap-3 rounded-full bg-white px-5 text-sm font-semibold text-[#111] transition group-hover:bg-[#eee]">Shop now <span aria-hidden="true">→</span></span>
+            </span>
+          </Link>
         ))}
       </section>
 
       <ShopByCategory categories={categories} products={products} />
 
-      <div className="pb-8 pt-10">
-        {womenProducts.length > 0 && (
-          <ProductGrid title={landing.womenSectionTitle} products={womenProducts} category="women" />
-        )}
-        {menProducts.length > 0 && (
-          <ProductGrid title={landing.menSectionTitle} products={menProducts} category="men" />
-        )}
-        {womenProducts.length === 0 && menProducts.length === 0 && (
-          <div className="mx-auto max-w-[1600px] px-4 pb-10 pt-8 sm:px-6 lg:px-8">
-            <div className="rounded-[16px] border border-dashed border-[#d9d7d2] bg-[#f7f6f4] p-10 text-center text-[#4d4d4d]">
-              No saved products are available for the landing page yet.
-            </div>
-          </div>
-        )}
-      </div>
+      <HomeProductCarousel title={landing.womenSectionTitle || "Women's collection"} products={womenProducts} category="women" />
+      <HomeProductCarousel title={landing.menSectionTitle || "Men's collection"} products={menProducts} category="men" />
 
       {saleProducts.length > 0 && (
-        <div className="pb-10 pt-4">
-          <ProductGrid title="Sale picks" products={saleProducts} />
-        </div>
+        <HomeProductCarousel title="Last chance · Sale picks" products={saleProducts} />
       )}
 
       <a
