@@ -10,6 +10,7 @@ type Product = {
   category: "women" | "men" | "accessories";
   price: string;
   image: string;
+  images?: string[];
   badge: string;
   tone: string;
   slug: string;
@@ -27,6 +28,7 @@ const emptyForm = {
   category: "women" as Product["category"],
   price: "",
   image: "",
+  images: [],
   badge: "In stock",
   tone: "#d9b0a8",
   slug: "",
@@ -50,7 +52,7 @@ const emptyLandingForm = {
 export default function AdminPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<Product>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -112,24 +114,29 @@ export default function AdminPage() {
   }, []);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) return;
 
     try {
       setUploading(true);
-      const formData = new FormData();
-      formData.append("file", file);
+      const uploadedUrls = await Promise.all(files.map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
 
-      const response = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
+        const response = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result?.error || `Unable to upload ${file.name}.`);
+        return result.url as string;
+      }));
+
+      setForm((current) => {
+        const images = [...(current.images ?? (current.image ? [current.image] : [])), ...uploadedUrls];
+        return { ...current, images, image: images[0] || "" };
       });
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result?.error || "Unable to upload image.");
-
-      setForm((current) => ({ ...current, image: result.url }));
-      toast.success("Image uploaded successfully.");
+      toast.success(`${uploadedUrls.length} ${uploadedUrls.length === 1 ? "photo" : "photos"} uploaded.`);
     } catch (error: any) {
       toast.error(error?.message || "Unable to upload image.");
     } finally {
@@ -206,6 +213,7 @@ export default function AdminPage() {
     setForm({
       ...emptyForm,
       ...product,
+      images: Array.isArray(product.images) && product.images.length ? product.images : product.image ? [product.image] : [],
       sizes: Array.isArray(product.sizes) && product.sizes.length ? product.sizes : ["S", "M", "L"],
       colors: Array.isArray(product.colors) && product.colors.length ? product.colors : [product.tone || "#d9b0a8"],
       tone: product.tone || "#d9b0a8",
@@ -340,18 +348,36 @@ export default function AdminPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#111111]">Product image</label>
+              <label className="mb-2 block text-sm font-medium text-[#111111]">Product photos</label>
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageUpload}
                 className="w-full rounded-md border border-[#d7d4cf] bg-white px-3 py-2.5 text-sm text-[#111111] outline-none file:mr-3 file:rounded file:border-0 file:bg-[#111111] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white focus:border-[#111111]"
-                required={!form.image}
+                required={!form.images?.length && !form.image}
               />
-              {uploading && <p className="mt-2 text-xs text-[#6a6a6a]">Uploading image...</p>}
-              {form.image && (
-                <div className="mt-3 overflow-hidden rounded-lg border border-[#e7e3df] bg-[#f7f6f4]">
-                  <img src={form.image} alt="Product preview" className="h-36 w-full object-cover" />
+              <p className="mt-2 text-xs text-[#6a6a6a]">Select multiple images. The first photo will be used as the main product image.</p>
+              {uploading && <p className="mt-2 text-xs font-medium text-[#6a6a6a]">Uploading photos...</p>}
+              {Boolean(form.images?.length || form.image) && (
+                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {(form.images?.length ? form.images : [form.image]).map((image, index) => (
+                    <div key={`${image}-${index}`} className="group relative aspect-square overflow-hidden rounded-lg border border-[#e7e3df] bg-[#f7f6f4]">
+                      <img src={image} alt={`Product photo ${index + 1}`} className="h-full w-full object-cover" />
+                      {index === 0 && <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold text-[#111111]">Main</span>}
+                      <button
+                        type="button"
+                        aria-label={`Remove photo ${index + 1}`}
+                        onClick={() => setForm((current) => {
+                          const images = (current.images?.length ? current.images : current.image ? [current.image] : []).filter((_, imageIndex) => imageIndex !== index);
+                          return { ...current, images, image: images[0] || "" };
+                        })}
+                        className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-lg leading-none text-[#111111] shadow transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -453,7 +479,7 @@ export default function AdminPage() {
           <div className="mt-6 flex gap-3">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploading}
               className="inline-flex flex-1 items-center justify-center rounded bg-[#111111] px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Saving..." : editingId ? "Update" : "Insert"}

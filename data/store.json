@@ -36,6 +36,35 @@
   ],
   "products": [
     {
+      "id": "c42556a3-57c9-494a-a769-c23e0082533c",
+      "name": "test",
+      "category": "men",
+      "price": "1000",
+      "image": "/images/products/1791724000928-Screenshot_2026-10-06_113733.png",
+      "images": [
+        "/images/products/1791724000928-Screenshot_2026-10-06_113733.png"
+      ],
+      "badge": "In stock",
+      "tone": "#d9b0a8",
+      "slug": "test",
+      "description": "",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XS"
+      ],
+      "colors": [
+        "#d9b0a8",
+        "#f7f7f4"
+      ],
+      "discountPercentage": 0,
+      "createdAt": "2026-10-11T13:13:49.837Z",
+      "updatedAt": "2026-10-11T13:13:49.837Z"
+    },
+    {
       "id": "612195a6-86a3-4b41-9371-9a0f4740ff86",
       "name": "N;OUSE",
       "category": "women",

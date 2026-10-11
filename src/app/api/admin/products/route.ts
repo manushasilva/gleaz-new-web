@@ -28,13 +28,18 @@ export async function POST(req: NextRequest) {
           .filter(Boolean);
 
     const discountPercentage = Number(body?.discountPercentage ?? 0);
+    const images = Array.isArray(body?.images)
+      ? body.images.map((image: unknown) => String(image || "").trim()).filter(Boolean)
+      : [];
+    const primaryImage = images[0] || String(body?.image || "").trim();
 
     const product = {
       id: body?.id || crypto.randomUUID(),
       name: String(body?.name || "").trim(),
       category: body?.category || "women",
       price: String(body?.price || "").trim(),
-      image: String(body?.image || "").trim(),
+      image: primaryImage,
+      images: images.length ? images : primaryImage ? [primaryImage] : [],
       badge: String(body?.badge || "In stock").trim(),
       tone: colors[0] || String(body?.tone || "#d9b0a8").trim(),
       slug: String(body?.slug || body?.name || "product").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -47,7 +52,7 @@ export async function POST(req: NextRequest) {
     };
 
     if (!product.name || !product.price || !product.image) {
-      return NextResponse.json({ error: "Name, price, and image are required." }, { status: 400 });
+      return NextResponse.json({ error: "Name, price, and at least one image are required." }, { status: 400 });
     }
 
     const products = await getProducts();
@@ -95,11 +100,21 @@ export async function PUT(req: NextRequest) {
           .filter(Boolean);
 
     const discountPercentage = Number(body?.discountPercentage ?? products[index]?.discountPercentage ?? 0);
+    const images = Array.isArray(body?.images)
+      ? body.images.map((image: unknown) => String(image || "").trim()).filter(Boolean)
+      : Array.isArray(products[index]?.images) && products[index].images!.length
+        ? products[index].images!
+        : products[index]?.image
+          ? [products[index].image]
+          : [];
+    const primaryImage = images[0] || String(body?.image || products[index]?.image || "").trim();
 
     const updatedProduct = {
       ...products[index],
       ...body,
       id: productId,
+      image: primaryImage,
+      images: images.length ? images : primaryImage ? [primaryImage] : [],
       slug:
         String(body?.slug || products[index].slug || products[index].name)
           .trim()

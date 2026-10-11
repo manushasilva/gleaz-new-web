@@ -15,6 +15,7 @@ type StoreProduct = {
   price: string;
   discountPercentage?: number | string; // <--- Added this property
   image: string;
+  images?: string[];
   badge: string;
   tone: string;
   slug: string;
@@ -63,6 +64,7 @@ export default function ProductDetailPage() {
   const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [selectedColor, setSelectedColor] = useState<string>("#e0b63d");
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -149,6 +151,10 @@ export default function ProductDetailPage() {
     }
   }, [product?.tone, product?.sizes, product?.colors]);
 
+  useEffect(() => {
+    setSelectedGalleryImage(product?.images?.[0] || product?.image || "");
+  }, [product?.id, product?.image, product?.images]);
+
   const parsePrice = (value: string) => {
     const numericValue = value.replace(/[^\d.]/g, "");
     return Number(numericValue) || 0;
@@ -160,7 +166,9 @@ export default function ProductDetailPage() {
     return `LKR ${new Intl.NumberFormat("en-LK").format(numericValue)}`;
   };
 
-  const gallery = product ? [product.image, product.image, product.image, product.image] : [];
+  const gallery = product
+    ? Array.from(new Set((product.images?.length ? product.images : [product.image]).filter(Boolean)))
+    : [];
   const isInWishlist = Boolean(product && wishlistItems.some((item) => item.id === product.id));
 
   const handleWishlistToggle = () => {
@@ -322,7 +330,9 @@ export default function ProductDetailPage() {
                 <button
                   key={`${product.name}-${index}`}
                   type="button"
-                  className="overflow-hidden rounded-md border border-[#ded9d2] bg-[#f5f3f0] p-1"
+                  onClick={() => setSelectedGalleryImage(image)}
+                  aria-pressed={selectedGalleryImage === image}
+                  className={`overflow-hidden rounded-md border bg-[#f5f3f0] p-1 ${selectedGalleryImage === image ? "border-[#111111]" : "border-[#ded9d2]"}`}
                   aria-label={`View product thumbnail ${index + 1}`}
                 >
                   <img src={image} alt={`${product.name} thumbnail ${index + 1}`} className="h-24 w-full object-cover" />
@@ -332,7 +342,7 @@ export default function ProductDetailPage() {
 
             <div className="overflow-hidden rounded-[12px] border border-[#e2dfda] bg-[#f4f0eb] p-3">
               <img
-                src={product.image}
+                src={selectedGalleryImage || gallery[0] || product.image}
                 alt={product.name}
                 className="h-[620px] w-full object-cover"
               />

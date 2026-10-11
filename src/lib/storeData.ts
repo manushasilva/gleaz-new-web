@@ -20,6 +20,7 @@ export type StoreProduct = {
   category: "women" | "men" | "accessories";
   price: string;
   image: string;
+  images?: string[];
   badge: string;
   tone: string;
   slug: string;
