@@ -2,8 +2,7 @@ import { CallIcon, EmailIcon, MapIcon } from "@/assets/icons";
 import {
   FacebookIcon,
   InstagramIcon,
-  LinkedInIcon,
-  TwitterIcon,
+  WhatsAppIcon,
 } from "@/assets/icons/social";
 import Link from "next/link";
 import AccountLinks from "./AccountLinks";
@@ -32,11 +31,11 @@ const Footer = () => {
 
               <li>
                 <Link
-                  href="tel:+94754731079"
+                  href="tel:+94754081108"
                   className="flex items-center gap-4.5 text-base"
                 >
                   <CallIcon className="fill-blue" width={24} height={24} />
-                  +94 75 473 1079
+                  +94 75 408 1108
                 </Link>
               </li>
 
@@ -64,7 +63,9 @@ const Footer = () => {
             {/* <!-- Social Links start --> */}
             <div className="flex items-center gap-4 mt-7.5">
               <Link
-                href="#"
+                href="https://web.facebook.com/profile.php?id=100054244658342"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex duration-200 ease-out hover:text-blue"
               >
                 <span className="sr-only">Facebook link</span>
@@ -72,15 +73,9 @@ const Footer = () => {
               </Link>
 
               <Link
-                href="#"
-                className="flex duration-200 ease-out hover:text-blue"
-              >
-                <span className="sr-only">Twitter link</span>
-                <TwitterIcon />
-              </Link>
-
-              <Link
-                href="#"
+                href="https://www.instagram.com/gleaz.fashion"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex duration-200 ease-out hover:text-blue"
               >
                 <span className="sr-only">Instagram link</span>
@@ -88,12 +83,13 @@ const Footer = () => {
               </Link>
 
               <Link
-                href="#"
-                aria-label="Linkedin Social Link"
+                href="https://wa.me/94754081108"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex duration-200 ease-out hover:text-blue"
               >
-                <span className="sr-only">LinkedIn link</span>
-                <LinkedInIcon />
+                <span className="sr-only">WhatsApp @gleaz.fasion</span>
+                <WhatsAppIcon />
               </Link>
             </div>
             {/* <!-- Social Links end --> */}
