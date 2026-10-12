@@ -17,6 +17,7 @@ export type CartItem = {
   availableQuantity?: number;
   color?: string;
   size?: string;
+  itemType?: "product" | "gift-voucher";
   attribute?: any;
   // Legacy support
   title?: string;

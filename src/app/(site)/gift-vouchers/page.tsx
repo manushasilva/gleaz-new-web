@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import toast from "react-hot-toast";
+import { useCart } from "@/hooks/useCart";
 
 type Voucher = {
   id: string;
@@ -18,6 +21,7 @@ const formatAmount = (amount: number) =>
   `LKR ${new Intl.NumberFormat("en-LK").format(amount)}`;
 
 export default function GiftVouchersPage() {
+  const { addItem } = useCart();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,6 +62,19 @@ export default function GiftVouchersPage() {
     }
     return filtered;
   }, [vouchers, amountFilter, sort]);
+
+  const handleAddToCart = (voucher: Voucher) => {
+    addItem({
+      id: `gift-voucher-${voucher.id}`,
+      name: voucher.name,
+      price: voucher.amount,
+      quantity: 1,
+      image: voucher.image,
+      slug: `gift-vouchers/${voucher.id}`,
+      itemType: "gift-voucher",
+    });
+    toast.success(`${voucher.name} added to cart.`);
+  };
 
   return (
     <main className="mx-auto max-w-[1600px] px-4 pb-20 pt-12 sm:px-6 lg:px-8">
@@ -130,21 +147,40 @@ export default function GiftVouchersPage() {
         <div className="grid grid-cols-1 gap-x-6 gap-y-10 pt-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visibleVouchers.map((voucher) => (
             <article key={voucher.id} className="group">
-              <div className="aspect-[4/3] overflow-hidden bg-[#f5f4f1]">
-                <img
-                  src={voucher.image}
-                  alt={voucher.name}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                />
-              </div>
+              <Link href={`/gift-vouchers/${voucher.id}`} className="block">
+                <div className="aspect-[4/3] overflow-hidden bg-[#f5f4f1]">
+                  <img
+                    src={voucher.image}
+                    alt={voucher.name}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                </div>
+              </Link>
               <div className="pt-4">
-                <h2 className="text-base font-medium text-[#111111]">{voucher.name}</h2>
+                <Link href={`/gift-vouchers/${voucher.id}`} className="text-base font-medium text-[#111111] hover:underline">
+                  {voucher.name}
+                </Link>
                 {voucher.description && (
                   <p className="mt-1 line-clamp-2 text-sm text-[#6a6a6a]">{voucher.description}</p>
                 )}
                 <p className="mt-3 text-base font-semibold text-[#111111]">
                   {formatAmount(voucher.amount)}
                 </p>
+                <div className="mt-4 flex gap-2">
+                  <Link
+                    href={`/gift-vouchers/${voucher.id}`}
+                    className="inline-flex flex-1 items-center justify-center border border-[#111111] px-3 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#111111]"
+                  >
+                    View voucher
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleAddToCart(voucher)}
+                    className="flex-1 bg-[#111111] px-3 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-white"
+                  >
+                    Add to cart
+                  </button>
+                </div>
               </div>
             </article>
           ))}
