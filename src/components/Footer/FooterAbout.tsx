@@ -15,7 +15,7 @@ const aboutData = [
   {
     id: 3,
     icon: EmailIcon,
-    text: 'support@example.com',
+    text: 'gleaz.fashion@gmail.com',
   }
 ]
 

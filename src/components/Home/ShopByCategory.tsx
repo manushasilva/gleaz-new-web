@@ -50,7 +50,7 @@ export default function ShopByCategory({ categories, products }: Props) {
         <p className="mt-2 max-w-xl text-sm leading-6 text-[#686662]">Choose a collection to preview styles, compare starting prices, and find available sizes before you shop.</p>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2">
         {categories.map((category) => {
           const categoryProducts = products.filter((product) => product.category === category.slug);
           const categoryProduct = categoryProducts[0];

@@ -170,7 +170,7 @@ const defaultData: StoreData = {
   footer: {
     address: "685 Market Street,Las Vegas, LA 95820,United States.",
     phone: "+(099) 532-786-9843",
-    email: "support@example.com",
+    email: "gleaz.fashion@gmail.com",
     copyright: `© ${new Date().getFullYear()}. All rights reserved.`,
   },
 };

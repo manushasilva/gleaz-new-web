@@ -19,7 +19,6 @@ const Home = async () => {
   const categories = [
     { name: "Women", slug: "women" as const, image: "/images/categories/categories-01.png", description: "Everyday pieces, made to feel special." },
     { name: "Men", slug: "men" as const, image: "/images/categories/categories-02.png", description: "Easy layers and modern essentials." },
-    { name: "Accessories", slug: "accessories" as const, image: "/images/categories/categories-03.png", description: "The finishing touches to your look." },
   ];
 
   return (
@@ -34,24 +33,24 @@ const Home = async () => {
             className="h-full w-full object-cover object-center"
           />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/10 sm:bg-gradient-to-r sm:from-black/60 sm:via-black/20 sm:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-white/85 via-white/25 to-transparent sm:bg-gradient-to-l sm:from-white/25 sm:via-white/5 sm:to-transparent" />
 
-          <div className="absolute inset-0 flex items-end px-5 pb-9 sm:items-center sm:px-10 sm:py-12 lg:px-16">
-            <div className="max-w-2xl text-left text-white">
+          <div className="absolute inset-0 flex items-end justify-end px-5 pb-9 sm:items-center sm:px-10 sm:py-12 lg:px-16">
+            <div className="max-w-2xl text-right text-[#111111]">
               {landing.heroBadge && (
-                <div className="mb-4 inline-flex rounded-full border border-white/40 bg-white/15 px-4 py-2 text-xs font-semibold text-white backdrop-blur-sm sm:mb-6 sm:text-sm">
+                <div className="mb-4 inline-flex rounded-full border border-black/25 bg-white/55 px-4 py-2 text-xs font-semibold text-[#111111] backdrop-blur-sm sm:mb-6 sm:text-sm">
                   {landing.heroBadge}
                 </div>
               )}
 
-              <h1 className="max-w-[12ch] text-5xl font-bold leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-8xl" style={{ fontFamily: "var(--font-display)" }}>
+              <h1 className="ml-auto max-w-[12ch] text-5xl font-bold leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-8xl" style={{ fontFamily: "var(--font-display)" }}>
                 {landing.heroTitle || "Be Better Everyday"}
               </h1>
-              <p className="mt-4 max-w-lg text-base leading-7 text-white/90 sm:mt-5 sm:text-lg">{landing.heroSubtitle || "Comfort-first style for wherever the day takes you."}</p>
+              <p className="ml-auto mt-4 max-w-lg text-base leading-7 text-black/75 sm:mt-5 sm:text-lg">{landing.heroSubtitle || "Comfort-first style for wherever the day takes you."}</p>
 
-              <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
+              <div className="mt-7 flex flex-wrap justify-end gap-3 sm:mt-8">
                 <Link href="/shop-with-sidebar?category=men" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#111] transition hover:bg-[#eee] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Shop men <span aria-hidden="true">→</span></Link>
-                <Link href="/shop-with-sidebar?category=women" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-white/80 bg-black/15 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white hover:text-[#111] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Shop women <span aria-hidden="true">→</span></Link>
+                <Link href="/shop-with-sidebar?category=women" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-black/70 bg-white/55 px-6 py-3 text-sm font-semibold text-[#111] backdrop-blur-sm transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black">Shop women <span aria-hidden="true">→</span></Link>
               </div>
             </div>
           </div>
