@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import type { ProductColorVariant } from "@/types/product";
 
 type Product = {
   id: string;
@@ -16,12 +17,11 @@ type Product = {
   slug: string;
   sizes?: string[];
   colors?: string[];
+  colorVariants?: ProductColorVariant[];
   discountPercentage?: number;
 };
 
 const sizeOptions = ["XS", "S", "M", "L", "XL", "XXL"];
-const colorOptions = ["#f3e6dc", "#d9dfe8", "#111827", "#f7f7f4", "#c7b299", "#b9c9b7"];
-
 const emptyForm = {
   id: "",
   name: "",
@@ -33,7 +33,8 @@ const emptyForm = {
   tone: "#d9b0a8",
   slug: "",
   sizes: ["S", "M", "L"],
-  colors: ["#d9b0a8", "#d9dfe8", "#111827"],
+  colors: ["#d9b0a8"],
+  colorVariants: [{ name: "", color: "#d9b0a8", price: "", images: [] }],
   discountPercentage: 0,
 };
 
@@ -55,7 +56,7 @@ export default function AdminPage() {
   const [form, setForm] = useState<Product>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingVariantIndex, setUploadingVariantIndex] = useState<number | null>(null);
   const [landingForm, setLandingForm] = useState(emptyLandingForm);
   const [landingLoading, setLandingLoading] = useState(false);
   const [landingImageUploading, setLandingImageUploading] = useState(false);
@@ -113,12 +114,15 @@ export default function AdminPage() {
     loadFooterSettings();
   }, []);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVariantImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    variantIndex: number,
+  ) => {
     const files = Array.from(event.target.files ?? []);
     if (!files.length) return;
 
     try {
-      setUploading(true);
+      setUploadingVariantIndex(variantIndex);
       const uploadedUrls = await Promise.all(files.map(async (file) => {
         const formData = new FormData();
         formData.append("file", file);
@@ -133,16 +137,51 @@ export default function AdminPage() {
       }));
 
       setForm((current) => {
-        const images = [...(current.images ?? (current.image ? [current.image] : [])), ...uploadedUrls];
-        return { ...current, images, image: images[0] || "" };
+        const colorVariants = [...(current.colorVariants || [])];
+        const variant = colorVariants[variantIndex];
+        if (!variant) return current;
+        colorVariants[variantIndex] = {
+          ...variant,
+          images: [...variant.images, ...uploadedUrls],
+        };
+        const images = Array.from(new Set(colorVariants.flatMap((item) => item.images)));
+        return {
+          ...current,
+          colorVariants,
+          colors: colorVariants.map((item) => item.color),
+          images,
+          image: images[0] || "",
+        };
       });
       toast.success(`${uploadedUrls.length} ${uploadedUrls.length === 1 ? "photo" : "photos"} uploaded.`);
     } catch (error: any) {
       toast.error(error?.message || "Unable to upload image.");
     } finally {
-      setUploading(false);
+      setUploadingVariantIndex(null);
       event.target.value = "";
     }
+  };
+
+  const updateColorVariant = (
+    variantIndex: number,
+    updates: Partial<ProductColorVariant>,
+  ) => {
+    setForm((current) => {
+      const colorVariants = [...(current.colorVariants || [])];
+      const variant = colorVariants[variantIndex];
+      if (!variant) return current;
+      colorVariants[variantIndex] = { ...variant, ...updates };
+      const images = Array.from(new Set(colorVariants.flatMap((item) => item.images)));
+      return {
+        ...current,
+        colorVariants,
+        colors: colorVariants.map((item) => item.color),
+        tone: colorVariants[0]?.color || current.tone,
+        images,
+        image: images[0] || "",
+        price: colorVariants[0]?.price || "",
+      };
+    });
   };
 
   const handleLandingImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,16 +213,28 @@ export default function AdminPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!form.colorVariants?.length || form.colorVariants.some((variant) =>
+      !variant.name.trim() || !variant.color || !variant.price.trim() || !variant.images.length
+    )) {
+      toast.error("Add a name, color, price, and at least one image for every color.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const payload: Product = {
         ...form,
         id: form.id || crypto.randomUUID(),
+        price: form.colorVariants[0].price,
+        image: form.colorVariants[0].images[0],
+        images: Array.from(new Set(form.colorVariants.flatMap((variant) => variant.images))),
         slug: form.slug || form.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
         sizes: Array.isArray(form.sizes) ? form.sizes.filter(Boolean) : [],
-        colors: Array.isArray(form.colors) && form.colors.length ? form.colors.filter(Boolean) : [form.tone],
-        tone: Array.isArray(form.colors) && form.colors.length ? form.colors[0] : form.tone,
+        colors: form.colorVariants.map((variant) => variant.color),
+        tone: form.colorVariants[0].color,
+        colorVariants: form.colorVariants,
         discountPercentage: Number(form.discountPercentage) > 0 ? Math.min(Number(form.discountPercentage), 100) : 0,
       };
 
@@ -209,14 +260,28 @@ export default function AdminPage() {
   };
 
   const handleEdit = (product: Product) => {
+    const existingImages = Array.isArray(product.images) && product.images.length
+      ? product.images
+      : product.image ? [product.image] : [];
+    const colorVariants = product.colorVariants?.length
+      ? product.colorVariants.map((variant) => ({ ...variant, images: [...variant.images] }))
+      : (product.colors?.length ? product.colors : [product.tone || "#d9b0a8"]).map((color) => ({
+        name: color,
+        color,
+        price: product.price,
+        images: existingImages,
+      }));
+
     setEditingId(product.id);
     setForm({
       ...emptyForm,
       ...product,
-      images: Array.isArray(product.images) && product.images.length ? product.images : product.image ? [product.image] : [],
+      images: Array.from(new Set(colorVariants.flatMap((variant) => variant.images))),
       sizes: Array.isArray(product.sizes) && product.sizes.length ? product.sizes : ["S", "M", "L"],
-      colors: Array.isArray(product.colors) && product.colors.length ? product.colors : [product.tone || "#d9b0a8"],
-      tone: product.tone || "#d9b0a8",
+      colors: colorVariants.map((variant) => variant.color),
+      colorVariants,
+      tone: colorVariants[0]?.color || product.tone || "#d9b0a8",
+      price: colorVariants[0]?.price || product.price,
       discountPercentage: Number(product.discountPercentage) || 0,
     });
   };
@@ -336,51 +401,129 @@ export default function AdminPage() {
               </select>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#111111]">Price</label>
-              <input
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
-                className="w-full rounded-md border border-[#d7d4cf] px-3 py-2.5 outline-none focus:border-[#111111]"
-                placeholder="Rs 4,500"
-                required
-              />
-            </div>
+            <section className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-[#111111]">Color variants</label>
+                  <p className="mt-1 text-xs text-[#6a6a6a]">Set a price and upload a separate photo gallery for each color.</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={uploadingVariantIndex !== null}
+                  onClick={() => setForm((current) => ({
+                    ...current,
+                    colorVariants: [...(current.colorVariants || []), {
+                      name: "",
+                      color: "#d9b0a8",
+                      price: current.colorVariants?.[0]?.price || current.price,
+                      images: [],
+                    }],
+                  }))}
+                  className="shrink-0 rounded border border-[#d7d4cf] px-3 py-2 text-xs font-semibold text-[#111111]"
+                >
+                  Add color
+                </button>
+              </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#111111]">Product photos</label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                className="w-full rounded-md border border-[#d7d4cf] bg-white px-3 py-2.5 text-sm text-[#111111] outline-none file:mr-3 file:rounded file:border-0 file:bg-[#111111] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white focus:border-[#111111]"
-                required={!form.images?.length && !form.image}
-              />
-              <p className="mt-2 text-xs text-[#6a6a6a]">Select multiple images. The first photo will be used as the main product image.</p>
-              {uploading && <p className="mt-2 text-xs font-medium text-[#6a6a6a]">Uploading photos...</p>}
-              {Boolean(form.images?.length || form.image) && (
-                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {(form.images?.length ? form.images : [form.image]).map((image, index) => (
-                    <div key={`${image}-${index}`} className="group relative aspect-square overflow-hidden rounded-lg border border-[#e7e3df] bg-[#f7f6f4]">
-                      <img src={image} alt={`Product photo ${index + 1}`} className="h-full w-full object-cover" />
-                      {index === 0 && <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold text-[#111111]">Main</span>}
+              {(form.colorVariants || []).map((variant, variantIndex) => (
+                <div key={`variant-${variantIndex}`} className="rounded-lg border border-[#e7e3df] bg-[#faf9f7] p-3">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#6a6a6a]">Color {variantIndex + 1}</span>
+                    {(form.colorVariants?.length || 0) > 1 && (
                       <button
                         type="button"
-                        aria-label={`Remove photo ${index + 1}`}
-                        onClick={() => setForm((current) => {
-                          const images = (current.images?.length ? current.images : current.image ? [current.image] : []).filter((_, imageIndex) => imageIndex !== index);
-                          return { ...current, images, image: images[0] || "" };
-                        })}
-                        className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-lg leading-none text-[#111111] shadow transition hover:bg-red-50 hover:text-red-600"
+                        disabled={uploadingVariantIndex !== null}
+                        onClick={() => {
+                          const colorVariants = (form.colorVariants || []).filter((_, index) => index !== variantIndex);
+                          const images = Array.from(new Set(colorVariants.flatMap((item) => item.images)));
+                          setForm({
+                            ...form,
+                            colorVariants,
+                            colors: colorVariants.map((item) => item.color),
+                            tone: colorVariants[0]?.color || form.tone,
+                            price: colorVariants[0]?.price || "",
+                            images,
+                            image: images[0] || "",
+                          });
+                        }}
+                        className="text-xs font-medium text-red-700 underline"
                       >
-                        ×
+                        Remove color
                       </button>
+                    )}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_64px_1fr]">
+                    <div>
+                      <label htmlFor={`color-name-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Color name</label>
+                      <input
+                        id={`color-name-${variantIndex}`}
+                        value={variant.name}
+                        onChange={(event) => updateColorVariant(variantIndex, { name: event.target.value })}
+                        className="w-full rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm outline-none focus:border-[#111111]"
+                        placeholder="Pale Pink"
+                        required
+                      />
                     </div>
-                  ))}
+                    <div>
+                      <label htmlFor={`color-swatch-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Swatch</label>
+                      <input
+                        id={`color-swatch-${variantIndex}`}
+                        type="color"
+                        value={variant.color}
+                        onChange={(event) => updateColorVariant(variantIndex, { color: event.target.value })}
+                        aria-label={`${variant.name || `Color ${variantIndex + 1}`} swatch color`}
+                        className="h-10 w-full cursor-pointer rounded border border-[#d7d4cf] bg-white p-1"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`color-price-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Price (LKR)</label>
+                      <input
+                        id={`color-price-${variantIndex}`}
+                        value={variant.price}
+                        onChange={(event) => updateColorVariant(variantIndex, { price: event.target.value })}
+                        className="w-full rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm outline-none focus:border-[#111111]"
+                        placeholder="4500"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <label htmlFor={`color-images-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Photos for {variant.name || `Color ${variantIndex + 1}`}</label>
+                    <input
+                      id={`color-images-${variantIndex}`}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      disabled={uploadingVariantIndex !== null}
+                      onChange={(event) => handleVariantImageUpload(event, variantIndex)}
+                      className="w-full rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm text-[#111111] outline-none file:mr-3 file:rounded file:border-0 file:bg-[#111111] file:px-3 file:py-2 file:text-xs file:font-medium file:text-white focus:border-[#111111] disabled:opacity-60"
+                    />
+                    {uploadingVariantIndex === variantIndex && <p className="mt-2 text-xs text-[#6a6a6a]">Uploading color photos...</p>}
+                    {!variant.images.length && <p className="mt-2 text-xs text-[#a12727]">Upload at least one image for this color.</p>}
+                    {variant.images.length > 0 && (
+                      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {variant.images.map((image, imageIndex) => (
+                          <div key={`${image}-${imageIndex}`} className="group relative aspect-square overflow-hidden rounded-lg border border-[#e7e3df] bg-white">
+                            <img src={image} alt={`${variant.name || "Color"} photo ${imageIndex + 1}`} className="h-full w-full object-cover" />
+                            {imageIndex === 0 && <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold text-[#111111]">Variant main</span>}
+                            <button
+                              type="button"
+                              aria-label={`Remove ${variant.name || "color"} photo ${imageIndex + 1}`}
+                              onClick={() => updateColorVariant(variantIndex, {
+                                images: variant.images.filter((_, index) => index !== imageIndex),
+                              })}
+                              className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-lg leading-none text-[#111111] shadow transition hover:bg-red-50 hover:text-red-600"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+              ))}
+            </section>
 
             <div>
               <label className="mb-2 block text-sm font-medium text-[#111111]">Badge</label>
@@ -444,42 +587,12 @@ export default function AdminPage() {
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#111111]">Available colors</label>
-              <div className="flex flex-wrap gap-3">
-                {colorOptions.map((color) => {
-                  const selected = Array.isArray(form.colors) && form.colors.includes(color);
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => {
-                        const currentColors = Array.isArray(form.colors) ? form.colors : [];
-                        const nextColors = selected
-                          ? currentColors.filter((item) => item !== color)
-                          : [...currentColors, color];
-                        const finalColors = nextColors.length ? nextColors : [color];
-                        setForm({
-                          ...form,
-                          colors: finalColors,
-                          tone: finalColors[0],
-                        });
-                      }}
-                      className={`h-11 w-11 rounded-md border-2 transition ${
-                        selected ? "border-[#111111] ring-2 ring-[#111111]/20" : "border-[#d7d4cf]"
-                      }`}
-                      style={{ backgroundColor: color }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
           </div>
 
           <div className="mt-6 flex gap-3">
             <button
               type="submit"
-              disabled={loading || uploading}
+              disabled={loading || uploadingVariantIndex !== null}
               className="inline-flex flex-1 items-center justify-center rounded bg-[#111111] px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Saving..." : editingId ? "Update" : "Insert"}

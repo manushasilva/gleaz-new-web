@@ -17,6 +17,13 @@ export type Product = {
   }[];
 };
 
+export type ProductColorVariant = {
+  name: string;
+  color: string;
+  price: string;
+  images: string[];
+};
+
 // Add discountPercentage here too if StoreProduct is mapped from or related to this type
 export type StoreProduct = {
   id: string;

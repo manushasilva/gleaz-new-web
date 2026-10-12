@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import bcrypt from "bcrypt";
 import { createClient } from "@supabase/supabase-js";
+import type { ProductColorVariant } from "@/types/product";
 
 export type StoreUser = {
   id: string;
@@ -28,6 +29,7 @@ export type StoreProduct = {
   description?: string;
   sizes?: string[];
   colors?: string[];
+  colorVariants?: ProductColorVariant[];
   discountPercentage?: number;
   createdAt?: string;
   updatedAt?: string;

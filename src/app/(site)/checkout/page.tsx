@@ -61,6 +61,8 @@ export default function CheckoutPage() {
             price: Number(item.price || 0),
             color: item.color,
             size: item.size,
+            image: item.image,
+            slug: item.slug,
             itemType: item.itemType,
           })),
           orderTotal: subtotal,

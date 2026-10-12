@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProducts, saveProducts } from "@/lib/storeData";
+import type { ProductColorVariant } from "@/types/product";
+
+function parseColorVariants(value: unknown): ProductColorVariant[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+
+  return value.map((variant) => ({
+    name: String(variant?.name || "").trim(),
+    color: String(variant?.color || "").trim(),
+    price: String(variant?.price || "").trim(),
+    images: Array.isArray(variant?.images)
+      ? variant.images.map((image: unknown) => String(image || "").trim()).filter(Boolean)
+      : [],
+  }));
+}
+
+function hasInvalidColorVariant(variants: ProductColorVariant[]) {
+  return variants.some((variant) =>
+    !variant.name || !variant.color || !variant.price || variant.images.length === 0
+  );
+}
 
 export async function GET() {
   try {
@@ -38,21 +58,33 @@ export async function POST(req: NextRequest) {
     const images = Array.isArray(body?.images)
       ? body.images.map((image: unknown) => String(image || "").trim()).filter(Boolean)
       : [];
-    const primaryImage = images[0] || String(body?.image || "").trim();
+    const colorVariants = parseColorVariants(body?.colorVariants);
+
+    if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants))) {
+      return NextResponse.json(
+        { error: "Every color needs a name, color, price, and at least one image." },
+        { status: 400 }
+      );
+    }
+
+    const variantImages = colorVariants?.flatMap((variant) => variant.images) || [];
+    const productImages = variantImages.length ? Array.from(new Set(variantImages)) : images;
+    const primaryImage = productImages[0] || String(body?.image || "").trim();
 
     const product = {
       id: body?.id || crypto.randomUUID(),
       name: String(body?.name || "").trim(),
       category: body?.category || "women",
-      price: String(body?.price || "").trim(),
+      price: String(colorVariants?.[0]?.price || body?.price || "").trim(),
       image: primaryImage,
-      images: images.length ? images : primaryImage ? [primaryImage] : [],
+      images: productImages.length ? productImages : primaryImage ? [primaryImage] : [],
       badge: String(body?.badge || "In stock").trim(),
-      tone: colors[0] || String(body?.tone || "#d9b0a8").trim(),
+      tone: colorVariants?.[0]?.color || colors[0] || String(body?.tone || "#d9b0a8").trim(),
       slug: String(body?.slug || body?.name || "product").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       description: String(body?.description || "").trim(),
       sizes,
-      colors: colors.length ? colors : [String(body?.tone || "#d9b0a8").trim()],
+      colors: colorVariants?.map((variant) => variant.color) || (colors.length ? colors : [String(body?.tone || "#d9b0a8").trim()]),
+      ...(colorVariants ? { colorVariants } : {}),
       discountPercentage: Number.isFinite(discountPercentage) && discountPercentage > 0 ? Math.min(discountPercentage, 100) : 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -107,6 +139,17 @@ export async function PUT(req: NextRequest) {
           .filter(Boolean);
 
     const discountPercentage = Number(body?.discountPercentage ?? products[index]?.discountPercentage ?? 0);
+    const colorVariants = parseColorVariants(
+      body?.colorVariants ?? products[index]?.colorVariants
+    );
+
+    if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants))) {
+      return NextResponse.json(
+        { error: "Every color needs a name, color, price, and at least one image." },
+        { status: 400 }
+      );
+    }
+
     const images = Array.isArray(body?.images)
       ? body.images.map((image: unknown) => String(image || "").trim()).filter(Boolean)
       : Array.isArray(products[index]?.images) && products[index].images!.length
@@ -114,22 +157,26 @@ export async function PUT(req: NextRequest) {
         : products[index]?.image
           ? [products[index].image]
           : [];
-    const primaryImage = images[0] || String(body?.image || products[index]?.image || "").trim();
+    const variantImages = colorVariants?.flatMap((variant) => variant.images) || [];
+    const productImages = variantImages.length ? Array.from(new Set(variantImages)) : images;
+    const primaryImage = productImages[0] || String(body?.image || products[index]?.image || "").trim();
 
     const updatedProduct = {
       ...products[index],
       ...body,
       id: productId,
+      price: String(colorVariants?.[0]?.price || body?.price || products[index]?.price || "").trim(),
       image: primaryImage,
-      images: images.length ? images : primaryImage ? [primaryImage] : [],
+      images: productImages.length ? productImages : primaryImage ? [primaryImage] : [],
       slug:
         String(body?.slug || products[index].slug || products[index].name)
           .trim()
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-"),
       sizes,
-      colors: colors.length ? colors : [String(body?.tone || products[index]?.tone || "#d9b0a8").trim()],
-      tone: colors[0] || String(body?.tone || products[index]?.tone || "#d9b0a8").trim(),
+      colors: colorVariants?.map((variant) => variant.color) || (colors.length ? colors : [String(body?.tone || products[index]?.tone || "#d9b0a8").trim()]),
+      ...(colorVariants ? { colorVariants } : {}),
+      tone: colorVariants?.[0]?.color || colors[0] || String(body?.tone || products[index]?.tone || "#d9b0a8").trim(),
       discountPercentage: Number.isFinite(discountPercentage) && discountPercentage > 0 ? Math.min(discountPercentage, 100) : 0,
       updatedAt: new Date().toISOString(),
     };

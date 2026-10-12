@@ -7,6 +7,7 @@ import { useCart } from "@/hooks/useCart";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 import { useAppSelector } from "@/redux/store";
 import SizeChartModal from "@/components/Common/SizeChartModal";
+import type { ProductColorVariant } from "@/types/product";
 
 type StoreProduct = {
   id: string;
@@ -22,6 +23,7 @@ type StoreProduct = {
   description?: string;
   sizes?: string[];
   colors?: string[];
+  colorVariants?: ProductColorVariant[];
 };
 
 const fallbackDetails = [
@@ -103,6 +105,18 @@ export default function ProductDetailPage() {
     () => products.find((item) => item.slug === safeSlug) ?? null,
     [products, safeSlug],
   );
+  const colorVariants = useMemo(() => {
+    if (!product) return [];
+    if (product.colorVariants?.length) return product.colorVariants;
+    const images = product.images?.length ? product.images : product.image ? [product.image] : [];
+    return (product.colors?.length ? product.colors : product.tone ? [product.tone] : []).map((color) => ({
+      name: color,
+      color,
+      price: product.price,
+      images,
+    }));
+  }, [product]);
+  const activeColorVariant = colorVariants.find((variant) => variant.color === selectedColor) || colorVariants[0];
 
   useEffect(() => {
     if (!product?.slug) {
@@ -140,20 +154,19 @@ export default function ProductDetailPage() {
   }, [product?.slug]);
 
   useEffect(() => {
-    const availableColors = product?.colors && product.colors.length ? product.colors : product?.tone ? [product.tone] : [];
-    if (availableColors.length) {
-      setSelectedColor(availableColors[0]);
+    if (colorVariants.length) {
+      setSelectedColor(colorVariants[0].color);
     }
     if (product?.sizes?.length) {
       setSelectedSize(product.sizes[0]);
     } else {
       setSelectedSize("");
     }
-  }, [product?.tone, product?.sizes, product?.colors]);
+  }, [product?.id, product?.sizes, colorVariants]);
 
   useEffect(() => {
-    setSelectedGalleryImage(product?.images?.[0] || product?.image || "");
-  }, [product?.id, product?.image, product?.images]);
+    setSelectedGalleryImage(activeColorVariant?.images?.[0] || product?.images?.[0] || product?.image || "");
+  }, [product?.id, selectedColor, activeColorVariant?.images, product?.images, product?.image]);
 
   const parsePrice = (value: string) => {
     const numericValue = value.replace(/[^\d.]/g, "");
@@ -166,15 +179,18 @@ export default function ProductDetailPage() {
     return `LKR ${new Intl.NumberFormat("en-LK").format(numericValue)}`;
   };
 
-  const gallery = product
-    ? Array.from(new Set((product.images?.length ? product.images : [product.image]).filter(Boolean)))
-    : [];
+  const gallery = Array.from(new Set(
+    (activeColorVariant?.images?.length
+      ? activeColorVariant.images
+      : product?.images?.length ? product.images : product?.image ? [product.image] : []
+    ).filter(Boolean)
+  ));
   const isInWishlist = Boolean(product && wishlistItems.some((item) => item.id === product.id));
 
   const handleWishlistToggle = () => {
     if (!product) return;
 
-    const basePrice = parsePrice(product.price);
+    const basePrice = parsePrice(activeColorVariant?.price || product.price);
     const discountedPrice = Number(product.discountPercentage) > 0
       ? Math.round(basePrice * (1 - Number(product.discountPercentage) / 100))
       : basePrice;
@@ -183,10 +199,10 @@ export default function ProductDetailPage() {
       id: product.id,
       title: product.name,
       slug: product.slug,
-      image: product.image,
+      image: activeColorVariant?.images[0] || product.image,
       price: discountedPrice,
       quantity,
-      color: selectedColor,
+      color: activeColorVariant?.name || selectedColor,
     });
   };
 
@@ -207,19 +223,18 @@ export default function ProductDetailPage() {
   };
 
   const handleClearSelections = () => {
-    const availableColors = product?.colors?.length ? product.colors : product?.tone ? [product.tone] : [];
     setSelectedSize(product?.sizes?.[0] || "");
-    setSelectedColor(availableColors[0] || "");
+    setSelectedColor(colorVariants[0]?.color || "");
     setQuantity(1);
   };
 
   const addProductToCart = () => {
     if (!product) return;
 
-    const availableColors = product.colors && product.colors.length ? product.colors : product.tone ? [product.tone] : [];
+    const availableColors = colorVariants;
     const hasSizeSelection = !product.sizes || product.sizes.length === 0 || Boolean(selectedSize);
-    const hasColorSelection = availableColors.length === 0 || Boolean(selectedColor);
-    const basePrice = parsePrice(product.price);
+    const hasColorSelection = availableColors.length === 0 || Boolean(activeColorVariant);
+    const basePrice = parsePrice(activeColorVariant?.price || product.price);
     const discountedPrice = Number(product.discountPercentage) > 0
       ? Math.round(basePrice * (1 - Number(product.discountPercentage) / 100))
       : basePrice;
@@ -235,12 +250,12 @@ export default function ProductDetailPage() {
     }
 
     const cartItem = {
-      id: product.sizes && product.sizes.length ? `${product.id}-${selectedSize}` : product.id,
+      id: `${product.id}-${selectedColor || "default"}-${selectedSize || "default"}`,
       name: product.name,
       price: discountedPrice,
       quantity,
-      image: product.image,
-      color: selectedColor,
+      image: activeColorVariant?.images[0] || product.image,
+      color: activeColorVariant?.name || selectedColor,
       size: selectedSize,
       slug: product.slug,
     };
@@ -259,10 +274,10 @@ export default function ProductDetailPage() {
   const handleBuyNow = () => {
     if (!product) return;
 
-    const availableColors = product.colors && product.colors.length ? product.colors : product.tone ? [product.tone] : [];
+    const availableColors = colorVariants;
     const hasSizeSelection = !product.sizes || product.sizes.length === 0 || Boolean(selectedSize);
-    const hasColorSelection = availableColors.length === 0 || Boolean(selectedColor);
-    const basePrice = parsePrice(product.price);
+    const hasColorSelection = availableColors.length === 0 || Boolean(activeColorVariant);
+    const basePrice = parsePrice(activeColorVariant?.price || product.price);
     const discountedPrice = Number(product.discountPercentage) > 0
       ? Math.round(basePrice * (1 - Number(product.discountPercentage) / 100))
       : basePrice;
@@ -279,12 +294,12 @@ export default function ProductDetailPage() {
 
     clearCart();
     addItem({
-      id: product.sizes && product.sizes.length ? `${product.id}-${selectedSize}` : product.id,
+      id: `${product.id}-${selectedColor || "default"}-${selectedSize || "default"}`,
       name: product.name,
       price: discountedPrice,
       quantity,
-      image: product.image,
-      color: selectedColor,
+      image: activeColorVariant?.images[0] || product.image,
+      color: activeColorVariant?.name || selectedColor,
       size: selectedSize,
       slug: product.slug,
     });
@@ -311,7 +326,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const basePrice = parsePrice(product.price);
+  const basePrice = parsePrice(activeColorVariant?.price || product.price);
   const discountRate = Math.min(Math.max(Number(product.discountPercentage) || 0, 0), 100) / 100;
   const currentUnitPrice = Math.round(basePrice * (1 - discountRate));
   const totalSavings = Math.max(basePrice - currentUnitPrice, 0) * quantity;
@@ -390,11 +405,11 @@ export default function ProductDetailPage() {
                   {formatLkrPrice(currentUnitPrice)}
                 </span>
                 <span className="text-[1.2rem] text-[#7a7a7a] line-through">
-                  {formatLkrPrice(product.price)}
+                  {formatLkrPrice(basePrice)}
                 </span>
               </>
             ) : (
-              <span className="text-[2rem] font-bold text-[#111111]">{formatLkrPrice(product.price)}</span>
+              <span className="text-[2rem] font-bold text-[#111111]">{formatLkrPrice(basePrice)}</span>
             )}
           </div>
 
@@ -489,17 +504,19 @@ export default function ProductDetailPage() {
 
           <div className="mt-8">
             <div className="mb-3 text-sm font-medium uppercase tracking-[0.12em] text-[#111111]">
-              Color
+              Color{activeColorVariant?.name ? ` ${activeColorVariant.name}` : ""}
             </div>
             <div className="flex items-center gap-3">
-              {(product.colors && product.colors.length ? product.colors : product.tone ? [product.tone] : []).map((color, idx) => (
+              {colorVariants.map((variant, idx) => (
                 <button
-                  key={`${color}-${idx}`}
+                  key={`${variant.color}-${idx}`}
                   type="button"
-                  aria-label={`Choose ${color}`}
-                  onClick={() => setSelectedColor(color)}
-                  className={`h-12 w-12 rounded-md border p-1 transition ${selectedColor === color ? "border-[#111111] ring-2 ring-[#111111]/20" : "border-[#d7d4d0]"}`}
-                  style={{ background: color }}
+                  aria-label={`Choose ${variant.name}`}
+                  title={variant.name}
+                  onClick={() => setSelectedColor(variant.color)}
+                  aria-pressed={selectedColor === variant.color}
+                  className={`h-12 w-12 rounded-md border p-1 transition ${selectedColor === variant.color ? "border-[#111111] ring-2 ring-[#111111]/20" : "border-[#d7d4d0]"}`}
+                  style={{ background: variant.color }}
                 />
               ))}
             </div>
