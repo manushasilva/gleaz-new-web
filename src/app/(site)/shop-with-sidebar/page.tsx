@@ -21,6 +21,7 @@ type Product = {
   badge: string;
   tone: string;
   slug: string;
+  discountPercentage?: number;
   colors?: string[];
   sizes?: string[];
 };
@@ -260,31 +261,46 @@ function ShopWithSidebarContent() {
               No products available in this category yet.
             </div>
           ) : (
-            filteredProducts.map((product) => (
-              <Link key={product.id} href={`/products/${product.slug}`} className="group block">
-                <article>
-                  <div className="relative h-[440px] overflow-hidden rounded-[12px] bg-[#f1efe9]" style={{ backgroundColor: product.tone }}>
-                    <div className="absolute left-3 top-3 inline-flex items-center justify-center rounded-full bg-[#1d9f69] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white shadow-sm">
-                      {formatProductBadge(product.badge)}
+            filteredProducts.map((product) => {
+              const originalPrice = parsePrice(product.price);
+              const discount = Math.min(Math.max(Number(product.discountPercentage) || 0, 0), 100);
+              const currentPrice = Math.round(originalPrice * (1 - discount / 100));
+
+              return (
+                <Link key={product.id} href={`/products/${product.slug}`} className="group block">
+                  <article>
+                    <div className="relative h-[440px] overflow-hidden rounded-[12px] bg-[#f1efe9]" style={{ backgroundColor: product.tone }}>
+                      <div className="absolute left-3 top-3 inline-flex items-center justify-center rounded-full bg-[#1d9f69] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white shadow-sm">
+                        {formatProductBadge(product.badge)}
+                      </div>
+
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                      />
                     </div>
 
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                    />
-                  </div>
-
-                  <div className="mt-4 text-left">
-                    <div className="text-[18px] font-medium text-[#111111]">{product.name}</div>
-                    <div className="mt-1 text-[14px] text-[#6d6d6d]">
-                      {selectedCategory === "women" ? "Serene Pink" : selectedCategory === "men" ? "Classic fit" : "Premium accessory"}
+                    <div className="mt-4 text-left">
+                      <div className="text-[18px] font-medium text-[#111111]">{product.name}</div>
+                      <div className="mt-1 text-[14px] text-[#6d6d6d]">
+                        {selectedCategory === "women" ? "Serene Pink" : selectedCategory === "men" ? "Classic fit" : "Premium accessory"}
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span className="text-[18px] font-bold text-[#111111]">
+                          LKR {new Intl.NumberFormat("en-LK").format(discount > 0 ? currentPrice : originalPrice)}
+                        </span>
+                        {discount > 0 && (
+                          <span className="text-sm text-[#7a7a7a] line-through">
+                            LKR {new Intl.NumberFormat("en-LK").format(originalPrice)}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-2 text-[18px] font-bold text-[#111111]">{product.price}</div>
-                  </div>
-                </article>
-              </Link>
-            ))
+                  </article>
+                </Link>
+              );
+            })
           )}
         </div>
       </div>

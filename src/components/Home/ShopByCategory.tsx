@@ -144,29 +144,41 @@ export default function ShopByCategory({ categories, products }: Props) {
 
           {categoryProducts.length > 0 ? (
             <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-              {categoryProducts.map((product) => (
-                <Link key={product.id} href={`/products/${product.slug}`} className="group min-w-0">
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[#f0eeeb]">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      className="object-cover transition duration-500 group-hover:scale-[1.03]"
-                    />
-                    {Number(product.discountPercentage) > 0 && (
-                      <span className="absolute left-2 top-2 rounded-full bg-[#d94444] px-2.5 py-1 text-[0.62rem] font-bold text-white sm:left-3 sm:top-3 sm:text-xs">
-                        Save {Math.min(Number(product.discountPercentage), 100)}%
+              {categoryProducts.map((product) => {
+                const originalPrice = Number(String(product.price).replace(/[^\d.]/g, "")) || 0;
+                const discount = Math.min(Math.max(Number(product.discountPercentage) || 0, 0), 100);
+
+                return (
+                  <Link key={product.id} href={`/products/${product.slug}`} className="group min-w-0">
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[#f0eeeb]">
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                      />
+                      {discount > 0 && (
+                        <span className="absolute left-2 top-2 rounded-full bg-[#d94444] px-2.5 py-1 text-[0.62rem] font-bold text-white sm:left-3 sm:top-3 sm:text-xs">
+                          Save {discount}%
+                        </span>
+                      )}
+                      <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-3 py-1.5 text-[0.62rem] font-semibold text-[#111111] opacity-100 transition sm:bottom-3 sm:right-3 sm:text-xs sm:opacity-0 sm:group-hover:opacity-100">
+                        View item →
                       </span>
-                    )}
-                    <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-3 py-1.5 text-[0.62rem] font-semibold text-[#111111] opacity-100 transition sm:bottom-3 sm:right-3 sm:text-xs sm:opacity-0 sm:group-hover:opacity-100">
-                      View item →
-                    </span>
-                  </div>
-                  <h4 className="mt-3 truncate text-sm font-medium text-[#111111]">{product.name}</h4>
-                  <p className="mt-1 text-sm font-semibold text-[#111111]">{formatPrice(effectivePrice(product))}</p>
-                </Link>
-              ))}
+                    </div>
+                    <h4 className="mt-3 truncate text-sm font-medium text-[#111111]">{product.name}</h4>
+                    <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <span className="text-sm font-semibold text-[#111111]">
+                        {formatPrice(discount > 0 ? Math.round(originalPrice * (1 - discount / 100)) : originalPrice)}
+                      </span>
+                      {discount > 0 && (
+                        <span className="text-xs text-[#777777] line-through">{formatPrice(originalPrice)}</span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-[#ded9d2] bg-[#faf9f7] px-5 py-8 text-center">

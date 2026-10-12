@@ -11,10 +11,53 @@ type Props = {
   category?: "women" | "men" | "accessories";
 };
 
-const formatPrice = (rawValue: string | number, discountPercentage = 0) => {
-  const basePrice = typeof rawValue === "number" ? rawValue : Number(String(rawValue).replace(/[^\d.]/g, ""));
-  const numericValue = Number.isFinite(basePrice) ? Math.round(basePrice * (1 - Math.min(Math.max(discountPercentage, 0), 100) / 100)) : 0;
-  return `LKR ${new Intl.NumberFormat("en-LK").format(numericValue)}.00`;
+const parsePrice = (rawValue: string | number) => {
+  const numericValue = typeof rawValue === "number" ? rawValue : Number(String(rawValue).replace(/[^\d.]/g, ""));
+  return Number.isFinite(numericValue) ? numericValue : 0;
+};
+
+const formatPrice = (value: number) => `LKR ${new Intl.NumberFormat("en-LK").format(value)}`;
+
+const getDiscountedPrice = (price: number, discountPercentage: number) =>
+  Math.round(price * (1 - Math.min(Math.max(discountPercentage, 0), 100) / 100));
+
+const getDiscountPercentage = (product: StoreProduct) =>
+  Math.min(Math.max(Number(product.discountPercentage) || 0, 0), 100);
+
+function ProductPrice({ product }: { product: StoreProduct }) {
+  const price = parsePrice(product.price);
+  const discount = getDiscountPercentage(product);
+  const discountedPrice = getDiscountedPrice(price, discount);
+
+  return (
+    <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <span className="text-sm font-semibold text-[#111]">
+        {formatPrice(discount > 0 ? discountedPrice : price)}
+      </span>
+      {discount > 0 && (
+        <span className="text-xs text-[#777] line-through">{formatPrice(price)}</span>
+      )}
+    </div>
+  );
+}
+
+function ProductCard({ product }: { product: StoreProduct }) {
+  const discount = getDiscountPercentage(product);
+  const colors = Array.isArray(product.colors) ? product.colors.slice(0, 5) : [];
+
+  return (
+    <Link key={product.id || product.slug} href={`/products/${product.slug}`} className="group w-[68vw] max-w-[300px] shrink-0 snap-start sm:w-[calc((100%-2.5rem)/3)] lg:w-[calc((100%-3.75rem)/4)]">
+      <div className="relative aspect-[4/5] overflow-hidden bg-[#f1f1ef]">
+        <Image src={product.image} alt={product.name} fill sizes="(max-width: 640px) 68vw, (max-width: 1024px) 33vw, 25vw" className="object-cover transition duration-500 group-hover:scale-[1.035]" />
+        {discount > 0 && <span className="absolute left-3 top-3 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#111]">-{discount}%</span>}
+        <span className="absolute bottom-3 right-3 translate-y-2 bg-white px-3 py-2 text-xs font-semibold text-[#111] opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">View product →</span>
+      </div>
+      {colors.length > 0 && <div className="mt-2.5 flex gap-1.5">{colors.map((color, index) => <span key={`${color}-${index}`} aria-hidden="true" className="h-4 w-4 rounded-sm border border-black/10" style={{ backgroundColor: color }} />)}</div>}
+      <p className="mt-2 text-sm font-medium leading-5 text-[#111]">{product.name}</p>
+      <p className="mt-0.5 text-xs text-[#666]">{product.badge || "Everyday essential"}</p>
+      <ProductPrice product={product} />
+    </Link>
+  );
 };
 
 export default function HomeProductCarousel({ title, products, category }: Props) {
@@ -44,23 +87,7 @@ export default function HomeProductCarousel({ title, products, category }: Props
       </div>
 
       <div ref={railRef} className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:gap-5 sm:px-0">
-        {products.map((product) => {
-          const discount = Math.min(Math.max(Number(product.discountPercentage) || 0, 0), 100);
-          const colors = Array.isArray(product.colors) ? product.colors.slice(0, 5) : [];
-          return (
-            <Link key={product.id || product.slug} href={`/products/${product.slug}`} className="group w-[68vw] max-w-[300px] shrink-0 snap-start sm:w-[calc((100%-2.5rem)/3)] lg:w-[calc((100%-3.75rem)/4)]">
-              <div className="relative aspect-[4/5] overflow-hidden bg-[#f1f1ef]">
-                <Image src={product.image} alt={product.name} fill sizes="(max-width: 640px) 68vw, (max-width: 1024px) 33vw, 25vw" className="object-cover transition duration-500 group-hover:scale-[1.035]" />
-                {discount > 0 && <span className="absolute left-3 top-3 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#111]">-{discount}%</span>}
-                <span className="absolute bottom-3 right-3 translate-y-2 bg-white px-3 py-2 text-xs font-semibold text-[#111] opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">View product →</span>
-              </div>
-              {colors.length > 0 && <div className="mt-2.5 flex gap-1.5">{colors.map((color, index) => <span key={`${color}-${index}`} aria-hidden="true" className="h-4 w-4 rounded-sm border border-black/10" style={{ backgroundColor: color }} />)}</div>}
-              <p className="mt-2 text-sm font-medium leading-5 text-[#111]">{product.name}</p>
-              <p className="mt-0.5 text-xs text-[#666]">{product.badge || "Everyday essential"}</p>
-              <p className="mt-1 text-sm font-semibold text-[#111]">{formatPrice(product.price, discount)}</p>
-            </Link>
-          );
-        })}
+        {products.map((product) => <ProductCard key={product.id || product.slug} product={product} />)}
       </div>
       {category && <Link href={`/shop-with-sidebar?category=${category}`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full border border-[#111] px-5 text-sm font-semibold text-[#111] sm:hidden">Shop all {category} →</Link>}
     </section>
