@@ -35,7 +35,7 @@ const Home = async () => {
 
           <div className="absolute inset-0 bg-gradient-to-t from-white/85 via-white/25 to-transparent sm:bg-gradient-to-l sm:from-white/25 sm:via-white/5 sm:to-transparent" />
 
-          <div className="absolute inset-0 flex items-center justify-start px-6 py-9 sm:px-[12%] lg:px-[27%]">
+          <div className="absolute inset-0 flex items-center justify-start px-6 py-9 sm:px-[12%] lg:px-[40%]">
             <div className="w-full max-w-sm text-left text-[#111111]">
               {landing.heroBadge && (
                 <div className="mb-4 inline-flex rounded-full border border-black/25 bg-white/55 px-4 py-2 text-xs font-semibold text-[#111111] backdrop-blur-sm sm:mb-6 sm:text-sm">
