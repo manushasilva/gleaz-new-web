@@ -159,24 +159,43 @@ const defaultData: StoreData = {
   },
 };
 
-async function ensureStore() {
-  await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
+const inMemoryStore: { current?: StoreData } = {};
 
+function isReadOnlyFileSystemError(error: unknown) {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error.code === "EROFS" || error.code === "EPERM" || error.code === "EACCES")
+  );
+}
+
+async function ensureStore() {
   try {
-    await fs.access(DATA_FILE);
-  } catch {
-    await fs.writeFile(DATA_FILE, JSON.stringify(defaultData, null, 2), "utf8");
+    await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
+
+    try {
+      await fs.access(DATA_FILE);
+    } catch {
+      await fs.writeFile(DATA_FILE, JSON.stringify(defaultData, null, 2), "utf8");
+    }
+  } catch (error) {
+    if (isReadOnlyFileSystemError(error)) {
+      inMemoryStore.current ??= defaultData;
+      return;
+    }
+
+    throw error;
   }
 }
 
 export async function readStore(): Promise<StoreData> {
-  await ensureStore();
-
   try {
+    await ensureStore();
     const raw = await fs.readFile(DATA_FILE, "utf8");
     const parsed = JSON.parse(raw) as Partial<StoreData>;
 
-    return {
+    const store: StoreData = {
       users: Array.isArray(parsed.users) ? parsed.users : [],
       // IMPORTANT: respect an explicit empty products array in store.json.
       // Previously this fell back to demo `defaultProducts` when products was empty,
@@ -192,15 +211,36 @@ export async function readStore(): Promise<StoreData> {
         ...(parsed.footer && typeof parsed.footer === "object" ? parsed.footer : {}),
       },
     };
-  } catch {
-    await fs.writeFile(DATA_FILE, JSON.stringify(defaultData, null, 2), "utf8");
+
+    inMemoryStore.current = store;
+    return store;
+  } catch (error) {
+    if (isReadOnlyFileSystemError(error)) {
+      inMemoryStore.current ??= defaultData;
+      return inMemoryStore.current;
+    }
+
+    try {
+      await fs.writeFile(DATA_FILE, JSON.stringify(defaultData, null, 2), "utf8");
+    } catch {
+      inMemoryStore.current ??= defaultData;
+    }
+
     return defaultData;
   }
 }
 
 export async function writeStore(data: StoreData) {
-  await ensureStore();
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
+  inMemoryStore.current = data;
+
+  try {
+    await ensureStore();
+    await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
+  } catch (error) {
+    if (!isReadOnlyFileSystemError(error)) {
+      throw error;
+    }
+  }
 }
 
 export async function getProducts() {

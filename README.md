@@ -77,6 +77,9 @@ WHATSAPP_ORDER_TEMPLATE_LANGUAGE="en_US"
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your_cloudinary_cloud_name"
 CLOUDINARY_API_KEY="your_cloudinary_api_key"
 CLOUDINARY_API_SECRET="your_cloudinary_api_secret"
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="your_server_side_service_role_key"
+SUPABASE_STORAGE_BUCKET="product-images"
 DATABASE_URL="your_database_url"
 NEXTAUTH_SECRET="your_nextauth_secret"
 FORMBOLD_FORM_ID="your_formbold_form_id"
@@ -85,6 +88,10 @@ FORMBOLD_FORM_ID="your_formbold_form_id"
 > ⚠️ **Important:** Replace the placeholder values with your actual API keys and credentials. Never commit your `.env` file to version control to protect sensitive data.
 
 Order notifications are sent server-side through the [WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api/). Add a valid access token and business phone number ID above. Without an approved template, WhatsApp only permits free-form messages during an active 24-hour customer service window. To send notifications outside that window, configure an approved template whose body has four text placeholders in this order: customer name, customer phone, order total, and order details.
+
+### Supabase image storage
+
+Create a Supabase project, then create a **public** Storage bucket named `product-images` (or set `SUPABASE_STORAGE_BUCKET` to a different bucket name). Add the project URL and the server-side `service_role` key as `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Keep the service-role key private: do not prefix it with `NEXT_PUBLIC_` or expose it to browser code. The upload API writes images to Supabase Storage and returns their public URLs.
 
 ---
 

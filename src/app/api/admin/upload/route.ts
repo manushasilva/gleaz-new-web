@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "node:fs/promises";
-import path from "node:path";
+import { createClient } from "@supabase/supabase-js";
 
-const uploadDir = path.join(process.cwd(), "public", "images", "products");
+export const runtime = "nodejs";
 
 function sanitizeFileName(fileName: string) {
   const normalized = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -11,6 +10,16 @@ function sanitizeFileName(fileName: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { error: "Image storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY." },
+        { status: 503 }
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get("file");
 
@@ -23,17 +32,28 @@ export async function POST(req: NextRequest) {
     }
 
     const bytes = Buffer.from(await file.arrayBuffer());
-    const safeName = sanitizeFileName(file.name);
-    const fileName = `${Date.now()}-${safeName}`;
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || "product-images";
+    const objectPath = `products/${Date.now()}-${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
-    await fs.mkdir(uploadDir, { recursive: true });
-    await fs.writeFile(path.join(uploadDir, fileName), bytes);
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(objectPath, bytes, {
+        contentType: file.type,
+        upsert: false,
+      });
 
-    const publicUrl = `/images/products/${fileName}`;
+    if (uploadError) {
+      throw new Error(`Supabase Storage upload failed: ${uploadError.message}`);
+    }
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(objectPath);
 
     return NextResponse.json(
       {
-        url: publicUrl,
+        url: data.publicUrl,
         message: "Image uploaded successfully.",
       },
       { status: 201 }
