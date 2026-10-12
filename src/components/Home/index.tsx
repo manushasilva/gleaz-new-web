@@ -35,22 +35,22 @@ const Home = async () => {
 
           <div className="absolute inset-0 bg-gradient-to-t from-white/85 via-white/25 to-transparent sm:bg-gradient-to-l sm:from-white/25 sm:via-white/5 sm:to-transparent" />
 
-          <div className="absolute inset-0 flex items-center justify-center px-5 py-9 sm:px-10 lg:px-16">
-            <div className="w-full max-w-2xl text-left text-[#111111]">
+          <div className="absolute inset-0 flex items-center justify-start px-6 py-9 sm:px-[12%] lg:px-[27%]">
+            <div className="w-full max-w-sm text-left text-[#111111]">
               {landing.heroBadge && (
                 <div className="mb-4 inline-flex rounded-full border border-black/25 bg-white/55 px-4 py-2 text-xs font-semibold text-[#111111] backdrop-blur-sm sm:mb-6 sm:text-sm">
                   {landing.heroBadge}
                 </div>
               )}
 
-              <h1 className="max-w-[12ch] text-5xl font-bold leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl" style={{ fontFamily: "var(--font-display)" }}>
+              <h1 className="max-w-[9ch] text-4xl font-medium leading-[1.02] tracking-normal sm:text-5xl lg:text-[3.5rem]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
                 {landing.heroTitle || "Be Better Everyday"}
               </h1>
-              <p className="mt-4 max-w-lg text-base leading-7 text-black/75 sm:mt-5 sm:text-lg">{landing.heroSubtitle || "Comfort-first style for wherever the day takes you."}</p>
+              <p className="mt-3 max-w-xs text-sm leading-6 text-black/75 sm:text-base">{landing.heroSubtitle || "Comfort-first style for wherever the day takes you."}</p>
 
-              <div className="mt-7 flex flex-wrap justify-start gap-3 sm:mt-8">
-                <Link href="/shop-with-sidebar?category=men" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#111] transition hover:bg-[#eee] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Shop men <span aria-hidden="true">→</span></Link>
-                <Link href="/shop-with-sidebar?category=women" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-black/70 bg-white/55 px-6 py-3 text-sm font-semibold text-[#111] backdrop-blur-sm transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black">Shop women <span aria-hidden="true">→</span></Link>
+              <div className="mt-5 flex flex-wrap justify-start gap-2.5 sm:mt-6">
+                <Link href="/shop-with-sidebar?category=men" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[2px] bg-[#817767] px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#6f6659] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#817767]">Shop men <span aria-hidden="true">→</span></Link>
+                <Link href="/shop-with-sidebar?category=women" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[2px] bg-[#817767] px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#6f6659] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#817767]">Shop women <span aria-hidden="true">→</span></Link>
               </div>
             </div>
           </div>
