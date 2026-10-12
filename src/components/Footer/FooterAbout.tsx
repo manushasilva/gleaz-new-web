@@ -5,12 +5,12 @@ const aboutData = [
   {
     id: 1,
     icon: MapIcon,
-    text: '40/D/2, Horathuduwa Circular Road, Halpita',
+    text: '685 Market Street,Las Vegas, LA 95820,United States.',
   },
   {
     id: 2,
     icon: CallIcon,
-    text: '+94 75 408 1108 / +94 71 277 0257',
+    text: '(+099) 532-786-9843',
   },
   {
     id: 3,

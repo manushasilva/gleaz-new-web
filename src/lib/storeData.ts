@@ -168,8 +168,8 @@ const defaultData: StoreData = {
   orders: [],
   landing: defaultLandingSettings,
   footer: {
-    address: "40/D/2, Horathuduwa Circular Road, Halpita",
-    phone: "+94 75 408 1108 / +94 71 277 0257",
+    address: "685 Market Street,Las Vegas, LA 95820,United States.",
+    phone: "+(099) 532-786-9843",
     email: "gleaz.fashion@gmail.com",
     copyright: `© ${new Date().getFullYear()}. All rights reserved.`,
   },
