@@ -39,7 +39,7 @@
       "id": "c42556a3-57c9-494a-a769-c23e0082533c",
       "name": "test",
       "category": "men",
-      "price": "1000",
+      "price": "2500",
       "image": "/images/products/1791724000928-Screenshot_2026-10-06_113733.png",
       "images": [
         "/images/products/1791724000928-Screenshot_2026-10-06_113733.png"
@@ -62,7 +62,25 @@
       ],
       "discountPercentage": 0,
       "createdAt": "2026-10-11T13:13:49.837Z",
-      "updatedAt": "2026-10-11T13:13:49.837Z"
+      "updatedAt": "2026-10-12T18:06:26.304Z",
+      "colorVariants": [
+        {
+          "name": "Top",
+          "color": "#d9b0a8",
+          "price": "2500",
+          "images": [
+            "/images/products/1791724000928-Screenshot_2026-10-06_113733.png"
+          ]
+        },
+        {
+          "name": "Trouser",
+          "color": "#f7f7f4",
+          "price": "1000",
+          "images": [
+            "/images/products/1791724000928-Screenshot_2026-10-06_113733.png"
+          ]
+        }
+      ]
     },
     {
       "id": "612195a6-86a3-4b41-9371-9a0f4740ff86",
@@ -102,6 +120,7 @@
       "updatedAt": "2026-09-10T21:11:34.295Z"
     }
   ],
+  "vouchers": [],
   "orders": [
     {
       "id": "4c00d7c6-62db-4739-9e49-a3648eda86c4",
