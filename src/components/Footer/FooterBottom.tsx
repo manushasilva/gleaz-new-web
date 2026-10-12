@@ -46,7 +46,7 @@ export default function FooterBottom() {
       <div className="px-4 mx-auto max-w-7xl sm:px-8 xl:px-0">
         <div className="flex flex-wrap items-center justify-between gap-5">
           <p className="text-sm font-normal text-dark">
-            &copy; {year}. All rights reserved by Pimjo.
+            &copy; {year}. All rights reserved by GLEAZ.
           </p>
 
           <div className="flex flex-wrap items-center gap-4">

@@ -52,11 +52,11 @@ const Footer = () => {
 
               <li>
                 <Link
-                  href="mailto:support@example.com"
+                  href="mailto:gleaz.fashion@gmail.com"
                   className="flex items-center gap-4.5 text-base"
                 >
                   <EmailIcon className="fill-blue" width={24} height={24} />
-                  support@example.com
+                  gleaz.fashion@gmail.com
                 </Link>
               </li>
             </ul>

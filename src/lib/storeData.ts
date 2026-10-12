@@ -170,7 +170,7 @@ const defaultData: StoreData = {
   footer: {
     address: "40/D/2, Horathuduwa Circular Road, Halpita",
     phone: "+94 75 473 1079 / +94 71 277 0257",
-    email: "support@example.com",
+    email: "gleaz.fashion@gmail.com",
     copyright: `© ${new Date().getFullYear()}. All rights reserved.`,
   },
 };
