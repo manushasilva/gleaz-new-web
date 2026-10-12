@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import bcrypt from "bcrypt";
+import { createClient } from "@supabase/supabase-js";
 
 export type StoreUser = {
   id: string;
@@ -133,6 +134,21 @@ const defaultProducts: StoreProduct[] = [
 ];
 
 const DATA_FILE = path.join(process.cwd(), "data", "store.json");
+const STORE_ROW_ID = "main";
+
+function getSupabaseStoreClient() {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+
+  if (!supabaseUrl && !supabaseKey) return null;
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Supabase store needs both SUPABASE_URL and SUPABASE_SECRET_KEY.");
+  }
+
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
 
 const defaultLandingSettings: LandingSettings = {
   heroTitle: "The Cotton",
@@ -160,6 +176,22 @@ const defaultData: StoreData = {
 };
 
 const inMemoryStore: { current?: StoreData } = {};
+
+function normalizeStore(parsed: Partial<StoreData> | null | undefined): StoreData {
+  return {
+    users: Array.isArray(parsed?.users) ? parsed.users : [],
+    // Preserve an explicit empty products array so deleted products stay deleted.
+    products: Array.isArray(parsed?.products) ? parsed.products : defaultProducts,
+    orders: Array.isArray(parsed?.orders) ? parsed.orders : [],
+    landing: {
+      ...defaultLandingSettings,
+      ...(parsed?.landing && typeof parsed.landing === "object" ? parsed.landing : {}),
+    },
+    footer: {
+      ...(parsed?.footer && typeof parsed.footer === "object" ? parsed.footer : {}),
+    },
+  };
+}
 
 function isReadOnlyFileSystemError(error: unknown) {
   return Boolean(
@@ -190,27 +222,53 @@ async function ensureStore() {
 }
 
 export async function readStore(): Promise<StoreData> {
+  const supabase = getSupabaseStoreClient();
+
+  if (supabase) {
+    const { data: row, error } = await supabase
+      .from("app_store")
+      .select("data")
+      .eq("id", STORE_ROW_ID)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Unable to read the Supabase app_store table: ${error.message}`);
+    }
+
+    if (row?.data && typeof row.data === "object") {
+      const store = normalizeStore(row.data as Partial<StoreData>);
+      inMemoryStore.current = store;
+      return store;
+    }
+
+    // Migrate the committed/local JSON data once when the Supabase row is first created.
+    let initialStore = defaultData;
+    try {
+      const raw = await fs.readFile(DATA_FILE, "utf8");
+      initialStore = normalizeStore(JSON.parse(raw) as Partial<StoreData>);
+    } catch {
+      // A fresh Vercel deployment may not contain a readable local data file.
+    }
+
+    const { error: seedError } = await supabase.from("app_store").upsert({
+      id: STORE_ROW_ID,
+      data: initialStore,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (seedError) {
+      throw new Error(`Unable to initialize the Supabase app_store table: ${seedError.message}`);
+    }
+
+    inMemoryStore.current = initialStore;
+    return initialStore;
+  }
+
   try {
     await ensureStore();
     const raw = await fs.readFile(DATA_FILE, "utf8");
     const parsed = JSON.parse(raw) as Partial<StoreData>;
-
-    const store: StoreData = {
-      users: Array.isArray(parsed.users) ? parsed.users : [],
-      // IMPORTANT: respect an explicit empty products array in store.json.
-      // Previously this fell back to demo `defaultProducts` when products was empty,
-      // which caused deleted products to reappear on the landing page. Return
-      // the parsed products array (even if empty) when present.
-      products: Array.isArray(parsed.products) ? parsed.products : defaultProducts,
-      orders: Array.isArray(parsed.orders) ? parsed.orders : [],
-      landing: {
-        ...defaultLandingSettings,
-        ...(parsed.landing && typeof parsed.landing === "object" ? parsed.landing : {}),
-      },
-      footer: {
-        ...(parsed.footer && typeof parsed.footer === "object" ? parsed.footer : {}),
-      },
-    };
+    const store = normalizeStore(parsed);
 
     inMemoryStore.current = store;
     return store;
@@ -232,6 +290,20 @@ export async function readStore(): Promise<StoreData> {
 
 export async function writeStore(data: StoreData) {
   inMemoryStore.current = data;
+  const supabase = getSupabaseStoreClient();
+
+  if (supabase) {
+    const { error } = await supabase.from("app_store").upsert({
+      id: STORE_ROW_ID,
+      data,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      throw new Error(`Unable to save the Supabase app_store table: ${error.message}`);
+    }
+    return;
+  }
 
   try {
     await ensureStore();
@@ -299,32 +371,7 @@ export async function getUsers() {
 }
 
 export async function ensureDefaultAdminUser() {
-  await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
-
-  let existing: StoreData | null = null;
-
-  try {
-    const raw = await fs.readFile(DATA_FILE, "utf8");
-    existing = JSON.parse(raw) as Partial<StoreData>;
-  } catch {
-    existing = null;
-  }
-
-  const store: StoreData = {
-    users: Array.isArray(existing?.users) ? existing.users : [],
-    // Preserve an explicit empty products array; do not seed demo products automatically
-    // when products is present but empty. This avoids re-adding demo items after an admin
-    // deletes all products.
-    products: Array.isArray(existing?.products) ? existing.products : defaultProducts,
-    orders: Array.isArray(existing?.orders) ? existing?.orders : [],
-    landing: {
-      ...defaultLandingSettings,
-      ...(existing?.landing && typeof existing.landing === "object" ? existing.landing : {}),
-    },
-    footer: {
-      ...(existing?.footer && typeof existing.footer === "object" ? existing.footer : {}),
-    },
-  };
+  const store = await readStore();
 
   const hasAdmin = store.users.some(
     (user) =>
@@ -348,8 +395,9 @@ export async function ensureDefaultAdminUser() {
       createdAt: new Date().toISOString(),
     });
 
-    await writeStore(store);
   }
+
+  await writeStore(store);
 }
 
 export async function createUser(user: Omit<StoreUser, "id" | "createdAt"> & { id?: string; createdAt?: string }) {

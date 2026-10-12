@@ -15,7 +15,10 @@ export async function POST(req: NextRequest) {
 
     if (!supabaseUrl || !supabaseKey) {
       return NextResponse.json(
-        { error: "Image storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY." },
+        {
+          error:
+            "Image storage is not configured. Set SUPABASE_URL and either SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY.",
+        },
         { status: 503 }
       );
     }

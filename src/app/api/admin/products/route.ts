@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getProducts, saveProducts } from "@/lib/storeData";
 
 export async function GET() {
-  const products = await getProducts();
-  return NextResponse.json({ products }, { status: 200 });
+  try {
+    const products = await getProducts();
+    return NextResponse.json({ products }, { status: 200 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message || "Unable to load products." },
+      { status: 503 }
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {

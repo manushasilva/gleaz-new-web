@@ -93,6 +93,10 @@ Order notifications are sent server-side through the [WhatsApp Cloud API](https:
 
 Create a Supabase project, then create a **public** Storage bucket named `product-images` (or set `SUPABASE_STORAGE_BUCKET` to a different bucket name). Add the project URL and the server-side `service_role` key as `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Keep the service-role key private: do not prefix it with `NEXT_PUBLIC_` or expose it to browser code. The upload API writes images to Supabase Storage and returns their public URLs.
 
+### Persisting admin data on Vercel
+
+Vercel's local filesystem is not persistent. Run [`supabase/setup.sql`](supabase/setup.sql) in the Supabase Dashboard's **SQL Editor** to create the private `app_store` table. The app uses the server-only Supabase secret key to store products, users, orders, and settings in this table. The first read seeds it from `data/store.json` when that file is available, or from default data otherwise. Keep the Supabase table private; do not add public RLS policies for it. Configure `SUPABASE_URL` and `SUPABASE_SECRET_KEY` in Vercel and redeploy.
+
 ---
 
 ## 📦 Installation Steps
