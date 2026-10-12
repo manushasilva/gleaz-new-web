@@ -30,8 +30,4 @@ export const menuData: MenuItem[] = [
     title: "GIFT VOUCHERS",
     path: "/gift-vouchers",
   },
-  {
-    title: "Products",
-    path: "/shop-with-sidebar?category=men",
-  },
 ];
