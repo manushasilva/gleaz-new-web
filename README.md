@@ -68,9 +68,12 @@ EMAIL_SERVER_USER="resend"
 EMAIL_SERVER_PASSWORD="your_resend_api_key"
 EMAIL_FROM="your_email"
 ADMIN_EMAILS="admin@example.com"
+ORDER_NOTIFICATION_EMAILS="orders@your-domain.com"
+RESEND_API_KEY="your_resend_api_key"
 WHATSAPP_ACCESS_TOKEN="your_meta_whatsapp_cloud_api_access_token"
 WHATSAPP_PHONE_NUMBER_ID="your_meta_whatsapp_business_phone_number_id"
 WHATSAPP_GRAPH_API_VERSION="v23.0"
+WHATSAPP_ORDER_RECIPIENT="947XXXXXXXX"
 # Optional: use an approved template to send outside WhatsApp's 24-hour customer service window
 WHATSAPP_ORDER_TEMPLATE_NAME="your_approved_order_template"
 WHATSAPP_ORDER_TEMPLATE_LANGUAGE="en_US"
@@ -87,7 +90,9 @@ FORMBOLD_FORM_ID="your_formbold_form_id"
 
 > ⚠️ **Important:** Replace the placeholder values with your actual API keys and credentials. Never commit your `.env` file to version control to protect sensitive data.
 
-Order notifications are sent server-side through the [WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api/). Add a valid access token and business phone number ID above. Without an approved template, WhatsApp only permits free-form messages during an active 24-hour customer service window. To send notifications outside that window, configure an approved template whose body has four text placeholders in this order: customer name, customer phone, order total, and order details.
+Order notifications are sent server-side through the [WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api/). In Vercel, configure `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, and `WHATSAPP_ORDER_RECIPIENT` (international format, digits only; defaults to the existing store number). The recipient must be permitted by your Meta WhatsApp Business setup. Without an approved template, WhatsApp only permits free-form messages during an active 24-hour customer service window; outside that window, configure an approved template whose body has four text placeholders in this order: customer name, customer phone, order total, and order details. A successful checkout attempts this notification and the API response reports whether WhatsApp accepted it.
+
+Checkout order email can use Resend's HTTP API by setting `RESEND_API_KEY` and `EMAIL_FROM`. Verify your sending domain with Resend and use a sender address on that domain; add the API key to Vercel as a server-only environment variable. Set `ORDER_NOTIFICATION_EMAILS` to your store inbox (comma-separated for multiple recipients); it falls back to `ADMIN_EMAILS`, then `EMAIL_SERVER_USER`. The customer confirmation is sent to the email address entered at checkout. The existing SMTP setup (`EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, `EMAIL_SERVER_USER`, `EMAIL_SERVER_PASSWORD`) remains available as a fallback for local development. After configuring Vercel environment variables, redeploy.
 
 ### Supabase image storage
 

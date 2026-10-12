@@ -46,8 +46,9 @@ export async function POST(req: NextRequest) {
 
     await saveOrder(order);
 
+    let emailNotification = { customerSent: false, storeSent: false };
     try {
-      await sendOrderEmail({
+      emailNotification = await sendOrderEmail({
         customerName,
         email,
         phone,
@@ -83,7 +84,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, whatsappSent, message: "Order sent successfully." },
+      {
+        success: true,
+        whatsappSent,
+        emailNotification,
+        message: "Order sent successfully.",
+      },
       { status: 200 }
     );
   } catch (error: any) {

@@ -1,13 +1,14 @@
 import type { OrderEmailPayload } from "@/utils/sendOrderEmail";
 
-const WHATSAPP_RECIPIENT = "94754081108";
-
 export async function sendOrderWhatsApp(order: OrderEmailPayload) {
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const recipient = (process.env.WHATSAPP_ORDER_RECIPIENT || "94754081108").replace(/\D/g, "");
 
-  if (!accessToken || !phoneNumberId) {
-    throw new Error("WhatsApp Cloud API is not configured. Set WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID.");
+  if (!accessToken || !phoneNumberId || !recipient) {
+    throw new Error(
+      "WhatsApp Cloud API is not configured. Set WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID, and a valid WHATSAPP_ORDER_RECIPIENT."
+    );
   }
 
   const graphApiVersion = process.env.WHATSAPP_GRAPH_API_VERSION || "v23.0";
@@ -31,7 +32,7 @@ export async function sendOrderWhatsApp(order: OrderEmailPayload) {
     ? {
         messaging_product: "whatsapp",
         recipient_type: "individual",
-        to: WHATSAPP_RECIPIENT,
+        to: recipient,
         type: "template",
         template: {
           name: templateName,
@@ -52,7 +53,7 @@ export async function sendOrderWhatsApp(order: OrderEmailPayload) {
     : {
         messaging_product: "whatsapp",
         recipient_type: "individual",
-        to: WHATSAPP_RECIPIENT,
+        to: recipient,
         type: "text",
         text: {
           preview_url: false,

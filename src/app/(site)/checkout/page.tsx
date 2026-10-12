@@ -24,7 +24,11 @@ export default function CheckoutPage() {
   const items = useMemo(() => Object.values(cartDetails ?? {}), [cartDetails]);
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
-  const [orderComplete, setOrderComplete] = useState<{ whatsappSent: boolean } | null>(null);
+  const [orderComplete, setOrderComplete] = useState<{
+    whatsappSent: boolean;
+    customerEmailSent: boolean;
+    storeEmailSent: boolean;
+  } | null>(null);
 
   const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
 
@@ -68,11 +72,17 @@ export default function CheckoutPage() {
         throw new Error(result?.error || "Unable to place your order.");
       }
 
-      setOrderComplete({ whatsappSent: Boolean(result?.whatsappSent) });
-      if (result?.whatsappSent) {
-        toast.success("Order placed and WhatsApp notification sent.");
+      const customerEmailSent = Boolean(result?.emailNotification?.customerSent);
+      const storeEmailSent = Boolean(result?.emailNotification?.storeSent);
+      setOrderComplete({
+        whatsappSent: Boolean(result?.whatsappSent),
+        customerEmailSent,
+        storeEmailSent,
+      });
+      if (customerEmailSent && storeEmailSent) {
+        toast.success("Order placed. Confirmation and store notifications were emailed.");
       } else {
-        toast.error("Order placed, but the WhatsApp notification could not be sent.");
+        toast.error("Order placed, but one or more email notifications could not be sent.");
       }
       setForm(initialForm);
       clearCart();
@@ -92,7 +102,7 @@ export default function CheckoutPage() {
           </div>
           <p className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-green-dark">Order received</p>
           <h1 className="mt-3 text-3xl font-bold text-dark sm:text-4xl">Thank you!</h1>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-body">Your order has been placed. {orderComplete.whatsappSent ? "The order details were automatically sent to 0754081108 on WhatsApp." : "We could not send the WhatsApp notification. Please contact 0754081108 with your order details."}</p>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-body">Your order has been placed. {orderComplete.customerEmailSent ? "An order confirmation was sent to your email." : "We could not send your email confirmation; our team will still process the order."} {orderComplete.storeEmailSent ? "Our team has also been notified by email." : "Our team email notification could not be sent."} {orderComplete.whatsappSent ? "A WhatsApp notification was also sent to our team." : "WhatsApp notification is currently unavailable."}</p>
           <Link href="/shop-with-sidebar?category=women" className="mt-6 inline-flex text-sm font-semibold text-blue hover:text-blue-dark">Continue shopping</Link>
         </div>
       </section>
