@@ -19,7 +19,6 @@ const Home = async () => {
   const categories = [
     { name: "Women", slug: "women" as const, image: "/images/categories/categories-01.png", description: "Everyday pieces, made to feel special." },
     { name: "Men", slug: "men" as const, image: "/images/categories/categories-02.png", description: "Easy layers and modern essentials." },
-    { name: "Accessories", slug: "accessories" as const, image: "/images/categories/categories-03.png", description: "The finishing touches to your look." },
   ];
 
   return (

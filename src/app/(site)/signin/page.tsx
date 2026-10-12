@@ -72,10 +72,6 @@ export default function SignInPage() {
             <h2 className="mt-2 text-[3rem] font-black leading-none text-slate-900">Sign in</h2>
           </div>
 
-          <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-            Default admin login: <span className="font-bold text-slate-900">admin</span> / <span className="font-bold text-slate-900">admin123</span>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-5">
             <label className="block text-sm font-medium text-slate-700">
               Email or username
