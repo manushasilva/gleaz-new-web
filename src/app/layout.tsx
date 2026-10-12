@@ -1,8 +1,10 @@
 import "./css/style.css";
 import { Metadata } from "next";
-import { getSeoSettings, getSiteName } from "@/get-api-data/seo-setting";
+import { getSeoSettings } from "@/get-api-data/seo-setting";
 import { GoogleTagManager } from '@next/third-parties/google';
 import { DM_Sans, Pacifico, Montserrat } from 'next/font/google'
+
+const siteUrl = "https://gleaz.io";
 
 const dm_sans = DM_Sans({
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
@@ -24,18 +26,19 @@ const montserrat = Montserrat({
 
 export async function generateMetadata(): Promise<Metadata> {
   const seoSettings = await getSeoSettings();
-  const site_name = await getSiteName();
   return {
-    title: `${seoSettings?.siteTitle || "GLEAZ"} | ${site_name}`,
+    metadataBase: new URL(siteUrl),
+    title: "Gleaz Fashion",
     description: seoSettings?.metadescription || "GLEAZ is a modern clothing brand offering elevated everyday essentials and premium fashion essentials.",
     keywords: seoSettings?.metaKeywords || "GLEAZ, clothing, fashion, boutique, modern apparel",
     openGraph: {
+      url: siteUrl,
       images: seoSettings?.metaImage ? [seoSettings.metaImage] : [],
     },
     icons: {
-      icon: seoSettings?.favicon || "/images/logo/gleaz-logo.svg",
-      shortcut: seoSettings?.favicon || "/images/logo/gleaz-logo.svg",
-      apple: seoSettings?.favicon || "/images/logo/gleaz-logo.svg",
+      icon: "/favicon.ico",
+      shortcut: "/favicon.ico",
+      apple: "/favicon.ico",
     },
   };
 }

@@ -2,13 +2,13 @@ import { prisma } from "@/lib/prismaDB";
 import { unstable_cache } from "next/cache";
 
 const safeFallbackSeo = {
-  siteTitle: "CozyCommerce",
+  siteTitle: "Gleaz Fashion",
   metadescription: "Modern clothing and lifestyle essentials for everyday confidence.",
   metaKeywords: "clothing, fashion, modern essentials, boutique",
   metaImage: "",
   favicon: "/favicon.ico",
   gtmId: "",
-  siteName: "CozyCommerce",
+  siteName: "Gleaz Fashion",
 };
 
 const safeFallbackLogo = "https://res.cloudinary.com/dc6svbdh9/image/upload/v1746335068/header/tsvfm6pvfwpbpyqdtxwn.svg";
@@ -34,9 +34,9 @@ export const getSiteName = unstable_cache(
           siteName: true,
         },
       });
-      return siteName ? siteName.siteName : process.env.SITE_NAME ? process.env.SITE_NAME : "Cozy-commerce";
+      return siteName ? siteName.siteName : process.env.SITE_NAME ? process.env.SITE_NAME : "Gleaz Fashion";
     } catch (error) {
-      return process.env.SITE_NAME ? process.env.SITE_NAME : "Cozy-commerce";
+      return process.env.SITE_NAME ? process.env.SITE_NAME : "Gleaz Fashion";
     }
   },
   ['site-name'], { tags: ['site-name'] }
@@ -75,4 +75,3 @@ export const getEmailLogo = unstable_cache(
   },
   ['email-logo'], { tags: ['email-logo'] }
 );
-
