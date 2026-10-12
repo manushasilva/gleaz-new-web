@@ -10,8 +10,9 @@ export default function AdminNav({ productCount }: { productCount: number }) {
   const [userName, setUserName] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const isOrders = pathname.includes("/admin/orders");
-  const isProducts = !isOrders;
+  const isOrders = pathname.startsWith("/admin/orders");
+  const isVouchers = pathname.startsWith("/admin/vouchers");
+  const isProducts = pathname === "/admin";
 
   useEffect(() => {
     try {
@@ -39,9 +40,15 @@ export default function AdminNav({ productCount }: { productCount: number }) {
       <nav className="rounded-md border border-[#e7e3df] bg-white px-3 py-2 shadow-sm">
         <Link
           href="/admin"
-          className={`mr-2 inline-block px-3 py-2 text-sm ${isProducts ? "font-semibold text-[#111111]" : "text-[#6a6a6a]"}`}
+          className={`inline-block px-3 py-2 text-sm ${isProducts ? "font-semibold text-[#111111]" : "text-[#6a6a6a]"}`}
         >
           Product manager
+        </Link>
+        <Link
+          href="/admin/vouchers"
+          className={`inline-block px-3 py-2 text-sm ${isVouchers ? "font-semibold text-[#111111]" : "text-[#6a6a6a]"}`}
+        >
+          Gift vouchers
         </Link>
         <Link
           href="/admin/orders"
@@ -51,9 +58,11 @@ export default function AdminNav({ productCount }: { productCount: number }) {
         </Link>
       </nav>
 
-      <div className="rounded-full border border-[#d9d7d2] bg-[#f7f6f4] px-4 py-2 text-sm text-[#111111]">
-        {productCount} products
-      </div>
+      {!isVouchers && !isOrders && (
+        <div className="rounded-full border border-[#d9d7d2] bg-[#f7f6f4] px-4 py-2 text-sm text-[#111111]">
+          {productCount} products
+        </div>
+      )}
 
       <div className="relative">
         <button

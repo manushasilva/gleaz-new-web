@@ -27,19 +27,11 @@ export const menuData: MenuItem[] = [
     ],
   },
   {
-    title: "Sale",
-    path: "/shop-with-sidebar?category=women",
+    title: "GIFT VOUCHERS",
+    path: "/gift-vouchers",
   },
   {
     title: "Products",
     path: "/shop-with-sidebar?category=men",
-  },
-  {
-    title: "Top Deals",
-    path: "/shop-with-sidebar?category=women",
-  },
-  {
-    title: "Elements",
-    path: "/shop-with-sidebar?category=accessories",
   },
 ];

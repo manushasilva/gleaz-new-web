@@ -33,6 +33,16 @@ export type StoreProduct = {
   updatedAt?: string;
 };
 
+export type StoreVoucher = {
+  id: string;
+  name: string;
+  description: string;
+  amount: number;
+  image: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type StoreOrder = {
   id: string;
   customerName: string;
@@ -69,6 +79,7 @@ export type FooterSettings = {
 export type StoreData = {
   users: StoreUser[];
   products: StoreProduct[];
+  vouchers: StoreVoucher[];
   orders: StoreOrder[];
   landing: LandingSettings;
   footer?: FooterSettings;
@@ -165,6 +176,7 @@ const defaultLandingSettings: LandingSettings = {
 const defaultData: StoreData = {
   users: [],
   products: defaultProducts,
+  vouchers: [],
   orders: [],
   landing: defaultLandingSettings,
   footer: {
@@ -182,6 +194,7 @@ function normalizeStore(parsed: Partial<StoreData> | null | undefined): StoreDat
     users: Array.isArray(parsed?.users) ? parsed.users : [],
     // Preserve an explicit empty products array so deleted products stay deleted.
     products: Array.isArray(parsed?.products) ? parsed.products : defaultProducts,
+    vouchers: Array.isArray(parsed?.vouchers) ? parsed.vouchers : [],
     orders: Array.isArray(parsed?.orders) ? parsed.orders : [],
     landing: {
       ...defaultLandingSettings,
@@ -325,6 +338,17 @@ export async function saveProducts(products: StoreProduct[]) {
   const nextStore = { ...store, products };
   await writeStore(nextStore);
   return products;
+}
+
+export async function getVouchers() {
+  const store = await readStore();
+  return store.vouchers;
+}
+
+export async function saveVouchers(vouchers: StoreVoucher[]) {
+  const store = await readStore();
+  await writeStore({ ...store, vouchers });
+  return vouchers;
 }
 
 export async function getLandingSettings() {

@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const file = formData.get("file");
+    const folder = formData.get("folder");
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "No image file uploaded." }, { status: 400 });
@@ -36,7 +37,8 @@ export async function POST(req: NextRequest) {
 
     const bytes = Buffer.from(await file.arrayBuffer());
     const bucket = process.env.SUPABASE_STORAGE_BUCKET || "product-images";
-    const objectPath = `products/${Date.now()}-${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+    const uploadFolder = folder === "vouchers" ? "vouchers" : "products";
+    const objectPath = `${uploadFolder}/${Date.now()}-${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
