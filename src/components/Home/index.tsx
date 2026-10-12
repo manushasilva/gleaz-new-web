@@ -59,23 +59,6 @@ const Home = async () => {
 
       <HomeProductCarousel title="Shop the latest styles" products={latestProducts} />
 
-      <section className="mx-auto grid max-w-[1600px] gap-4 px-4 py-8 sm:grid-cols-2 sm:px-6 lg:gap-6 lg:px-8">
-        {[
-          { title: "Find your everyday favorite", label: "WOMEN'S COLLECTION", href: "/shop-with-sidebar?category=women", image: womenProducts[0]?.image || categories[0].image },
-          { title: "Made to move with you", label: "MEN'S COLLECTION", href: "/shop-with-sidebar?category=men", image: menProducts[0]?.image || categories[1].image },
-        ].map((feature) => (
-          <Link key={feature.href} href={feature.href} className="group relative flex min-h-[340px] items-end overflow-hidden rounded-2xl bg-[#222] p-6 text-white sm:min-h-[420px] sm:rounded-3xl sm:p-9">
-            <Image src={feature.image} alt="" fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover transition duration-700 group-hover:scale-[1.03]" />
-            <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-            <span className="relative z-10 max-w-md">
-              <span className="text-xs font-semibold tracking-[0.12em] text-white/80">{feature.label}</span>
-              <span className="mt-2 block text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">{feature.title}</span>
-              <span className="mt-5 inline-flex min-h-11 items-center gap-3 rounded-full bg-white px-5 text-sm font-semibold text-[#111] transition group-hover:bg-[#eee]">Shop now <span aria-hidden="true">→</span></span>
-            </span>
-          </Link>
-        ))}
-      </section>
-
       <ShopByCategory categories={categories} products={products} />
 
       <HomeProductCarousel title={landing.womenSectionTitle || "Women's collection"} products={womenProducts} category="women" />
