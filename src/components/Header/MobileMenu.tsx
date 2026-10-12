@@ -105,7 +105,7 @@ const MobileMenu = ({ isOpen, onClose, menuData, headerLogo }: MobileMenuProps) 
                       <div>
                         <button
                           onClick={() => toggleSubmenu(i)}
-                          className="flex items-center justify-between w-full px-4 py-3 text-sm text-gray-800 rounded-lg hover:text-blue text-dark hover:bg-gray-2"
+                          className="flex items-center justify-between w-full px-4 py-3 text-sm text-gray-800 uppercase rounded-lg hover:text-blue text-dark hover:bg-gray-2"
                         >
                           <span className="font-medium">{menuItem.title}</span>
                           <svg
@@ -137,7 +137,7 @@ const MobileMenu = ({ isOpen, onClose, menuData, headerLogo }: MobileMenuProps) 
                               <Link
                                 key={j}
                                 href={subItem.path || "#"}
-                                className="block px-4 py-3 text-sm rounded-lg hover:bg-gray-2 text-dark border-gray-3 hover:text-blue "
+                                className="block px-4 py-3 text-sm uppercase rounded-lg hover:bg-gray-2 text-dark border-gray-3 hover:text-blue "
                                 onClick={onClose}
                               >
                                 {subItem.title}
@@ -149,7 +149,7 @@ const MobileMenu = ({ isOpen, onClose, menuData, headerLogo }: MobileMenuProps) 
                     ) : (
                       <Link
                         href={menuItem.path || "#"}
-                        className="block px-4 py-3 text-sm font-medium rounded-lg hover:text-blue text-dark hover:bg-gray-2"
+                        className="block px-4 py-3 text-sm font-medium uppercase rounded-lg hover:text-blue text-dark hover:bg-gray-2"
                         onClick={onClose}
                       >
                         {menuItem.title}

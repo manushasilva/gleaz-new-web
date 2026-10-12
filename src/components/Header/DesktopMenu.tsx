@@ -35,7 +35,7 @@ const DesktopMenu = ({ menuData, stickyMenu }: DesktopMenuProps) => {
             {menuItem.submenu ? (
               <>
                 <button
-                  className={`flex items-center gap-1 hover:text-blue font-medium ${stickyMenu ? "py-4" : "py-6"} relative text-sm font-medium ${menuItem.submenu?.some(subItem => pathname === subItem.path) ? "text-blue" : "text-dark"}`}
+                  className={`flex items-center gap-1 hover:text-blue font-medium uppercase ${stickyMenu ? "py-4" : "py-6"} relative text-sm font-medium ${menuItem.submenu?.some(subItem => pathname === subItem.path) ? "text-blue" : "text-dark"}`}
                 >
                   {menuItem.title}
                   <svg
@@ -66,7 +66,7 @@ const DesktopMenu = ({ menuData, stickyMenu }: DesktopMenuProps) => {
                     <Link
                       key={j}
                       href={subItem.path || "#"}
-                      className={`block px-4 py-2 text-sm font-medium rounded-lg hover:text-blue hover:bg-gray-2 ${subItem.path && pathname.split('?')[0] === subItem.path.split('?')[0] ? "text-blue" : "text-dark"}`}
+                      className={`block px-4 py-2 text-sm font-medium uppercase rounded-lg hover:text-blue hover:bg-gray-2 ${subItem.path && pathname.split('?')[0] === subItem.path.split('?')[0] ? "text-blue" : "text-dark"}`}
                     >
                       {subItem.title}
                     </Link>
@@ -76,7 +76,7 @@ const DesktopMenu = ({ menuData, stickyMenu }: DesktopMenuProps) => {
             ) : (
               <Link
                 href={menuItem.path || "#"}
-                className={`hover:text-blue font-medium ${stickyMenu ? "py-4" : "py-6"} block relative text-sm ${menuItem.path && pathname.split('?')[0] === menuItem.path.split('?')[0] ? "text-blue" : "text-dark"}`}
+                className={`hover:text-blue font-medium uppercase ${stickyMenu ? "py-4" : "py-6"} block relative text-sm ${menuItem.path && pathname.split('?')[0] === menuItem.path.split('?')[0] ? "text-blue" : "text-dark"}`}
               >
                 {menuItem.title}
               </Link>
