@@ -33,14 +33,14 @@ const emptyForm = {
   badge: "In stock",
   tone: "#d9b0a8",
   slug: "",
-  sizes: ["S", "M", "L"],
+  sizes: [],
   colors: ["#d9b0a8"],
   colorVariants: [{
     name: "",
     color: "#d9b0a8",
     price: "",
     images: [],
-    sizeVariants: ["S", "M", "L"].map((size) => ({ size, price: "", quantity: 0 })),
+    sizeVariants: [],
   }],
   discountPercentage: 0,
 };
@@ -64,6 +64,7 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadingVariantIndex, setUploadingVariantIndex] = useState<number | null>(null);
+  const [customSizeInputs, setCustomSizeInputs] = useState<Record<number, string>>({});
   const [landingForm, setLandingForm] = useState(emptyLandingForm);
   const [landingLoading, setLandingLoading] = useState(false);
   const [landingImageUploading, setLandingImageUploading] = useState(false);
@@ -155,6 +156,9 @@ export default function AdminPage() {
         return {
           ...current,
           colorVariants,
+          sizes: Array.from(new Set(colorVariants.flatMap((item) =>
+            (item.sizeVariants || []).map((sizeVariant) => sizeVariant.size)
+          ))),
           colors: colorVariants.map((item) => item.color),
           images,
           image: images[0] || "",
@@ -182,6 +186,9 @@ export default function AdminPage() {
       return {
         ...current,
         colorVariants,
+        sizes: Array.from(new Set(colorVariants.flatMap((item) =>
+          (item.sizeVariants || []).map((sizeVariant) => sizeVariant.size)
+        ))),
         colors: colorVariants.map((item) => item.color),
         tone: colorVariants[0]?.color || current.tone,
         images,
@@ -191,31 +198,51 @@ export default function AdminPage() {
     });
   };
 
-  const updateSizeSelection = (size: string) => {
+  const updateColorSizeSelection = (variantIndex: number, size: string) => {
     setForm((current) => {
-      const currentSizes = current.sizes || [];
-      const sizes = currentSizes.includes(size)
-        ? currentSizes.filter((item) => item !== size)
-        : [...currentSizes, size];
+      const colorVariants = [...(current.colorVariants || [])];
+      const variant = colorVariants[variantIndex];
+      if (!variant) return current;
+
+      const sizeVariants = variant.sizeVariants || [];
+      const existingSize = sizeVariants.find(
+        (item) => item.size.toLowerCase() === size.toLowerCase()
+      );
+      colorVariants[variantIndex] = {
+        ...variant,
+        sizeVariants: existingSize
+          ? sizeVariants.filter((item) => item !== existingSize)
+          : [
+            ...sizeVariants,
+            {
+              size,
+              price: variant.price || current.price,
+              quantity: 0,
+            },
+          ],
+      };
 
       return {
         ...current,
-        sizes,
-        colorVariants: (current.colorVariants || []).map((variant) => {
-          const existingSizeVariants = variant.sizeVariants || [];
-          return {
-            ...variant,
-            sizeVariants: sizes.map((nextSize) =>
-              existingSizeVariants.find((item) => item.size === nextSize) || {
-                size: nextSize,
-                price: variant.price,
-                quantity: 0,
-              }
-            ),
-          };
-        }),
+        sizes: Array.from(new Set(colorVariants.flatMap((item) =>
+          (item.sizeVariants || []).map((sizeVariant) => sizeVariant.size)
+        ))),
+        colorVariants,
       };
     });
+  };
+
+  const addCustomSize = (variantIndex: number) => {
+    const size = customSizeInputs[variantIndex]?.trim();
+    if (!size) return;
+    const currentVariant = form.colorVariants?.[variantIndex];
+    if (currentVariant?.sizeVariants?.some((item) => item.size.toLowerCase() === size.toLowerCase())) {
+      toast.error("That size has already been added to this color.");
+      return;
+    }
+
+    updateColorSizeSelection(variantIndex, size);
+    setCustomSizeInputs((current) => ({ ...current, [variantIndex]: "" }));
   };
 
   const handleLandingImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,16 +275,24 @@ export default function AdminPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!form.colorVariants?.length || form.colorVariants.some((variant) =>
-      !variant.name.trim() ||
-      !variant.color ||
-      (!(form.sizes || []).length && !variant.price.trim()) ||
-      !variant.images.length ||
-      (form.sizes || []).some((size) => {
-        const inventory = variant.sizeVariants?.find((item) => item.size === size);
-        return !inventory?.price.trim() || !Number.isInteger(inventory.quantity) || inventory.quantity < 0;
-      })
-    )) {
+    if (!form.colorVariants?.length || form.colorVariants.some((variant) => {
+      const sizeVariants = variant.sizeVariants || [];
+      return (
+        !variant.name.trim() ||
+        !variant.color ||
+        (!sizeVariants.length && !variant.price.trim()) ||
+        !variant.images.length ||
+        new Set(sizeVariants.map((item) => item.size.trim().toLowerCase())).size !== sizeVariants.length ||
+        sizeVariants.some((item) =>
+          !item.size.trim() ||
+          !item.price.trim() ||
+          !Number.isFinite(Number(item.price.replace(/[^\d.]/g, ""))) ||
+          Number(item.price.replace(/[^\d.]/g, "")) <= 0 ||
+          !Number.isInteger(item.quantity) ||
+          item.quantity < 0
+        )
+      );
+    })) {
       toast.error("Add a name, color, base price, photos, and a valid price and stock quantity for each size.");
       return;
     }
@@ -272,7 +307,9 @@ export default function AdminPage() {
         image: form.colorVariants[0].images[0],
         images: Array.from(new Set(form.colorVariants.flatMap((variant) => variant.images))),
         slug: form.slug || form.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-        sizes: Array.isArray(form.sizes) ? form.sizes.filter(Boolean) : [],
+        sizes: Array.from(new Set(form.colorVariants.flatMap((variant) =>
+          (variant.sizeVariants || []).map((item) => item.size.trim()).filter(Boolean)
+        ))),
         colors: form.colorVariants.map((variant) => variant.color),
         tone: form.colorVariants[0].color,
         colorVariants: form.colorVariants.map((variant) => ({
@@ -309,18 +346,18 @@ export default function AdminPage() {
       : product.image ? [product.image] : [];
     const existingSizes = Array.isArray(product.sizes) && product.sizes.length
       ? product.sizes
-      : ["S", "M", "L"];
+      : [];
     const colorVariants = product.colorVariants?.length
       ? product.colorVariants.map((variant) => ({
         ...variant,
         images: [...variant.images],
-        sizeVariants: existingSizes.map((size) =>
-          variant.sizeVariants?.find((item) => item.size === size) || {
+        sizeVariants: variant.sizeVariants
+          ? variant.sizeVariants.map((item) => ({ ...item }))
+          : existingSizes.map((size) => ({
             size,
             price: variant.price,
             quantity: product.quantity ?? 0,
-          }
-        ),
+          })),
       }))
       : (product.colors?.length ? product.colors : [product.tone || "#d9b0a8"]).map((color) => ({
         name: color,
@@ -339,7 +376,9 @@ export default function AdminPage() {
       ...emptyForm,
       ...product,
       images: Array.from(new Set(colorVariants.flatMap((variant) => variant.images))),
-      sizes: existingSizes,
+      sizes: Array.from(new Set(colorVariants.flatMap((variant) =>
+        (variant.sizeVariants || []).map((item) => item.size)
+      ))),
       colors: colorVariants.map((variant) => variant.color),
       colorVariants,
       tone: colorVariants[0]?.color || product.tone || "#d9b0a8",
@@ -463,35 +502,11 @@ export default function AdminPage() {
               </select>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#111111]">Available sizes</label>
-              <div className="flex flex-wrap gap-2">
-                {sizeOptions.map((size) => {
-                  const selected = Array.isArray(form.sizes) && form.sizes.includes(size);
-                  return (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => updateSizeSelection(size)}
-                      className={`rounded border px-3 py-2 text-sm font-medium transition ${
-                        selected
-                          ? "border-[#111111] bg-[#111111] text-white"
-                          : "border-[#d7d4cf] bg-white text-[#111111]"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="mt-2 text-xs text-[#6a6a6a]">Choose sizes first, then set a different price and stock quantity for each color and size.</p>
-            </div>
-
             <section className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <label className="block text-sm font-medium text-[#111111]">Color variants</label>
-                  <p className="mt-1 text-xs text-[#6a6a6a]">Set each color, its photo gallery, and size-by-size price and stock.</p>
+                  <p className="mt-1 text-xs text-[#6a6a6a]">Customize the available sizes, prices, and stock separately for each color.</p>
                 </div>
                 <button
                   type="button"
@@ -506,14 +521,7 @@ export default function AdminPage() {
                         current.colorVariants?.[0]?.price ||
                         current.price,
                       images: [],
-                      sizeVariants: (current.sizes || []).map((size) => ({
-                        size,
-                        price:
-                          current.colorVariants?.[0]?.sizeVariants?.find((item) => item.size === size)?.price ||
-                          current.colorVariants?.[0]?.price ||
-                          current.price,
-                        quantity: 0,
-                      })),
+                      sizeVariants: [],
                     }],
                   }))}
                   className="shrink-0 rounded border border-[#d7d4cf] px-3 py-2 text-xs font-semibold text-[#111111]"
@@ -536,6 +544,9 @@ export default function AdminPage() {
                           setForm({
                             ...form,
                             colorVariants,
+                            sizes: Array.from(new Set(colorVariants.flatMap((item) =>
+                              (item.sizeVariants || []).map((sizeVariant) => sizeVariant.size)
+                            ))),
                             colors: colorVariants.map((item) => item.color),
                             tone: colorVariants[0]?.color || form.tone,
                             price: colorVariants[0]?.price || "",
@@ -549,7 +560,7 @@ export default function AdminPage() {
                       </button>
                     )}
                   </div>
-                  <div className={`grid gap-3 ${form.sizes?.length ? "sm:grid-cols-[1fr_64px]" : "sm:grid-cols-[1fr_64px_1fr]"}`}>
+                  <div className={`grid gap-3 ${variant.sizeVariants?.length ? "sm:grid-cols-[1fr_64px]" : "sm:grid-cols-[1fr_64px_1fr]"}`}>
                     <div>
                       <label htmlFor={`color-name-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Color name</label>
                       <input
@@ -572,7 +583,7 @@ export default function AdminPage() {
                         className="h-10 w-full cursor-pointer rounded border border-[#d7d4cf] bg-white p-1"
                       />
                     </div>
-                    {!form.sizes?.length && (
+                    {!variant.sizeVariants?.length && (
                       <div>
                         <label htmlFor={`color-price-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Price (LKR)</label>
                         <input
@@ -623,17 +634,77 @@ export default function AdminPage() {
                       </div>
                     )}
                   </div>
-                  {(form.sizes || []).length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-[#111111]">
+                      Sizes for this color
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {sizeOptions.map((size) => {
+                        const selected = variant.sizeVariants?.some((item) => item.size === size) || false;
+                        return (
+                          <button
+                            key={`${variantIndex}-${size}`}
+                            type="button"
+                            onClick={() => updateColorSizeSelection(variantIndex, size)}
+                            aria-pressed={selected}
+                            className={`rounded border px-3 py-1.5 text-xs font-medium transition ${
+                              selected
+                                ? "border-[#111111] bg-[#111111] text-white"
+                                : "border-[#d7d4cf] bg-white text-[#111111]"
+                            }`}
+                          >
+                            {selected ? `Remove ${size}` : `Add ${size}`}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <label className="sr-only" htmlFor={`custom-size-${variantIndex}`}>Custom size for {variant.name || `color ${variantIndex + 1}`}</label>
+                      <input
+                        id={`custom-size-${variantIndex}`}
+                        value={customSizeInputs[variantIndex] || ""}
+                        onChange={(event) => setCustomSizeInputs((current) => ({
+                          ...current,
+                          [variantIndex]: event.target.value,
+                        }))}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            addCustomSize(variantIndex);
+                          }
+                        }}
+                        className="min-w-0 flex-1 rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm outline-none focus:border-[#111111]"
+                        placeholder="Other size"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addCustomSize(variantIndex)}
+                        className="rounded border border-[#d7d4cf] px-3 py-2 text-xs font-semibold text-[#111111]"
+                      >
+                        Add size
+                      </button>
+                    </div>
+                  </div>
+
+                  {(variant.sizeVariants || []).length > 0 && (
                     <div className="mt-4">
                       <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-[#111111]">
                         Price and stock by size
                       </p>
                       <div className="space-y-2">
-                        {form.sizes?.map((size) => {
-                          const inventory = variant.sizeVariants?.find((item) => item.size === size);
+                        {(variant.sizeVariants || []).map((inventory) => {
+                          const size = inventory.size;
                           return (
                             <div key={`${variantIndex}-${size}`} className="grid grid-cols-[48px_1fr_1fr] items-center gap-2">
-                              <span className="text-sm font-semibold text-[#111111]">{size}</span>
+                              <button
+                                type="button"
+                                onClick={() => updateColorSizeSelection(variantIndex, size)}
+                                className="text-left text-sm font-semibold text-red-700"
+                                aria-label={`Remove size ${size} from ${variant.name || `color ${variantIndex + 1}`}`}
+                                title={`Remove size ${size}`}
+                              >
+                                {size} ×
+                              </button>
                               <label className="sr-only" htmlFor={`size-price-${variantIndex}-${size}`}>Price for {variant.name} size {size}</label>
                               <input
                                 id={`size-price-${variantIndex}-${size}`}

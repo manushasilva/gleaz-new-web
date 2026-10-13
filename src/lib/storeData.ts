@@ -567,7 +567,7 @@ export async function saveOrder(order: StoreOrder) {
     if (!colorVariant?.sizeVariants?.length) return item;
 
     const sizeVariant = colorVariant.sizeVariants.find(
-      (variant) => variant.size === String(item.size || "")
+      (variant) => variant.size.toLowerCase() === String(item.size || "").toLowerCase()
     );
     const requestedQuantity = Number(item.quantity);
     if (!sizeVariant || !Number.isInteger(requestedQuantity) || requestedQuantity < 1) {

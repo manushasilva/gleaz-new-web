@@ -33,6 +33,9 @@ const fallbackDetails = [
   { label: "Delivery", value: "2-4 working days" },
 ];
 
+const findSizeVariant = (variant: ProductColorVariant | undefined, size: string) =>
+  variant?.sizeVariants?.find((item) => item.size.toLowerCase() === size.toLowerCase());
+
 const shoppingBenefits = [
   { title: "Free Shipping", detail: "On orders over LKR 4,500" },
   { title: "Easy Returns", detail: "14-day hassle-free return policy" },
@@ -121,13 +124,13 @@ export default function ProductDetailPage() {
     if (!product?.sizes?.length) return [];
     return product.sizes.filter((size) => colorVariants.some((variant) => {
       if (!variant.sizeVariants) return product.quantity === undefined || product.quantity > 0;
-      return Number(variant.sizeVariants.find((item) => item.size === size)?.quantity || 0) > 0;
+      return Number(findSizeVariant(variant, size)?.quantity || 0) > 0;
     }));
   }, [product?.sizes, product?.quantity, colorVariants]);
   const availableColorVariants = selectedSize
     ? colorVariants.filter((variant) => {
       if (!variant.sizeVariants) return product?.quantity === undefined || product.quantity > 0;
-      return Number(variant.sizeVariants.find((item) => item.size === selectedSize)?.quantity || 0) > 0;
+      return Number(findSizeVariant(variant, selectedSize)?.quantity || 0) > 0;
     })
     : colorVariants;
   const activeColorVariant =
@@ -135,7 +138,7 @@ export default function ProductDetailPage() {
     availableColorVariants[0] ||
     colorVariants.find((variant) => variant.color === selectedColor) ||
     colorVariants[0];
-  const selectedSizeVariant = activeColorVariant?.sizeVariants?.find((item) => item.size === selectedSize);
+  const selectedSizeVariant = findSizeVariant(activeColorVariant, selectedSize);
   const availableQuantity = activeColorVariant?.sizeVariants?.length
     ? Number(selectedSizeVariant?.quantity || 0)
     : product?.quantity;
@@ -180,7 +183,7 @@ export default function ProductDetailPage() {
       const initialSize = availableSizes[0] || product?.sizes?.[0] || "";
       const initialColor = colorVariants.find((variant) =>
         !variant.sizeVariants ||
-        Number(variant.sizeVariants.find((item) => item.size === initialSize)?.quantity || 0) > 0
+        Number(findSizeVariant(variant, initialSize)?.quantity || 0) > 0
       );
       setSelectedColor(initialColor?.color || colorVariants[0].color);
     }
@@ -253,7 +256,7 @@ export default function ProductDetailPage() {
     const size = availableSizes[0] || product?.sizes?.[0] || "";
     const color = colorVariants.find((variant) =>
       !variant.sizeVariants ||
-      Number(variant.sizeVariants.find((item) => item.size === size)?.quantity || 0) > 0
+      Number(findSizeVariant(variant, size)?.quantity || 0) > 0
     );
     setSelectedSize(size);
     setSelectedColor(color?.color || colorVariants[0]?.color || "");
@@ -278,7 +281,7 @@ export default function ProductDetailPage() {
     setSelectedSize(size);
     const nextAvailableColors = colorVariants.filter((variant) =>
       !variant.sizeVariants ||
-      Number(variant.sizeVariants.find((item) => item.size === size)?.quantity || 0) > 0
+      Number(findSizeVariant(variant, size)?.quantity || 0) > 0
     );
     if (!nextAvailableColors.some((variant) => variant.color === selectedColor)) {
       setSelectedColor(nextAvailableColors[0]?.color || "");

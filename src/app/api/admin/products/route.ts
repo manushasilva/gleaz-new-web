@@ -28,32 +28,52 @@ function parseColorVariants(value: unknown): ProductColorVariant[] | undefined {
   }));
 }
 
-function hasInvalidColorVariant(variants: ProductColorVariant[], sizes: string[]) {
+function hasInvalidColorVariant(variants: ProductColorVariant[]) {
   return variants.some((variant) => {
     if (
       !variant.name ||
       !variant.color ||
-      (!variant.price && sizes.length === 0) ||
+      (!variant.sizeVariants?.length && !variant.price) ||
       variant.images.length === 0
     ) {
       return true;
     }
 
-    if (!variant.sizeVariants) return false;
-    const sizeNames = variant.sizeVariants.map((item) => item.size);
+    if (!variant.sizeVariants?.length) return false;
+    const sizeNames = variant.sizeVariants.map((item) => item.size.toLowerCase());
     return (
       new Set(sizeNames).size !== sizeNames.length ||
       variant.sizeVariants.some((item) =>
-        !sizes.includes(item.size) ||
+        !item.size ||
         !item.price ||
         !Number.isFinite(Number(item.price.replace(/[^\d.]/g, ""))) ||
         Number(item.price.replace(/[^\d.]/g, "")) <= 0 ||
         !Number.isInteger(item.quantity) ||
         item.quantity < 0
-      ) ||
-      sizes.some((size) => !sizeNames.includes(size))
+      )
     );
   });
+}
+
+function getProductSizes(colorVariants: ProductColorVariant[] | undefined, fallbackSizes: string[]) {
+  if (!colorVariants) return fallbackSizes;
+  const seenSizes = new Set<string>();
+  return colorVariants.flatMap((variant) =>
+    (variant.sizeVariants || []).flatMap((item) => {
+      const normalizedSize = item.size.toLowerCase();
+      if (seenSizes.has(normalizedSize)) return [];
+      seenSizes.add(normalizedSize);
+      return [item.size];
+    })
+  );
+}
+
+function getPrimaryPrice(colorVariants: ProductColorVariant[] | undefined, fallbackPrice: unknown) {
+  return (
+    colorVariants?.find((variant) => variant.sizeVariants?.[0]?.price)?.sizeVariants?.[0]?.price ||
+    colorVariants?.find((variant) => variant.price)?.price ||
+    String(fallbackPrice || "")
+  ).trim();
 }
 
 export async function GET() {
@@ -95,7 +115,7 @@ export async function POST(req: NextRequest) {
       : [];
     const colorVariants = parseColorVariants(body?.colorVariants);
 
-    if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants, sizes))) {
+    if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants))) {
       return NextResponse.json(
         { error: "Each color needs a name, swatch, and photos, plus a valid price and stock quantity for every selected size." },
         { status: 400 }
@@ -110,14 +130,14 @@ export async function POST(req: NextRequest) {
       id: body?.id || crypto.randomUUID(),
       name: String(body?.name || "").trim(),
       category: body?.category || "women",
-      price: String(colorVariants?.[0]?.sizeVariants?.[0]?.price || colorVariants?.[0]?.price || body?.price || "").trim(),
+      price: getPrimaryPrice(colorVariants, body?.price),
       image: primaryImage,
       images: productImages.length ? productImages : primaryImage ? [primaryImage] : [],
       badge: String(body?.badge || "In stock").trim(),
       tone: colorVariants?.[0]?.color || colors[0] || String(body?.tone || "#d9b0a8").trim(),
       slug: String(body?.slug || body?.name || "product").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       description: String(body?.description || "").trim(),
-      sizes,
+      sizes: getProductSizes(colorVariants, sizes),
       colors: colorVariants?.map((variant) => variant.color) || (colors.length ? colors : [String(body?.tone || "#d9b0a8").trim()]),
       ...(colorVariants ? { colorVariants } : {}),
       discountPercentage: Number.isFinite(discountPercentage) && discountPercentage > 0 ? Math.min(discountPercentage, 100) : 0,
@@ -178,7 +198,7 @@ export async function PUT(req: NextRequest) {
       body?.colorVariants ?? products[index]?.colorVariants
     );
 
-    if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants, sizes))) {
+    if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants))) {
       return NextResponse.json(
         { error: "Each color needs a name, swatch, and photos, plus a valid price and stock quantity for every selected size." },
         { status: 400 }
@@ -200,7 +220,7 @@ export async function PUT(req: NextRequest) {
       ...products[index],
       ...body,
       id: productId,
-      price: String(colorVariants?.[0]?.sizeVariants?.[0]?.price || colorVariants?.[0]?.price || body?.price || products[index]?.price || "").trim(),
+      price: getPrimaryPrice(colorVariants, body?.price || products[index]?.price),
       image: primaryImage,
       images: productImages.length ? productImages : primaryImage ? [primaryImage] : [],
       slug:
@@ -208,7 +228,7 @@ export async function PUT(req: NextRequest) {
           .trim()
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-"),
-      sizes,
+      sizes: getProductSizes(colorVariants, sizes),
       colors: colorVariants?.map((variant) => variant.color) || (colors.length ? colors : [String(body?.tone || products[index]?.tone || "#d9b0a8").trim()]),
       ...(colorVariants ? { colorVariants } : {}),
       tone: colorVariants?.[0]?.color || colors[0] || String(body?.tone || products[index]?.tone || "#d9b0a8").trim(),
