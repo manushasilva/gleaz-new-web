@@ -16,8 +16,9 @@ function parseColorVariants(value: unknown): ProductColorVariant[] | undefined {
   if (!Array.isArray(value)) return undefined;
 
   return value.map((variant) => ({
+    itemCode: String(variant?.itemCode || variant?.name || "").trim(),
     name: String(variant?.name || "").trim(),
-    color: String(variant?.color || "").trim(),
+    color: String(variant?.color || "#d9b0a8").trim(),
     price: String(variant?.price || "").trim(),
     images: Array.isArray(variant?.images)
       ? variant.images.map((image: unknown) => String(image || "").trim()).filter(Boolean)
@@ -29,10 +30,10 @@ function parseColorVariants(value: unknown): ProductColorVariant[] | undefined {
 }
 
 function hasInvalidColorVariant(variants: ProductColorVariant[]) {
-  return variants.some((variant) => {
+  const itemCodes = variants.map((variant) => variant.itemCode?.toLowerCase());
+  return new Set(itemCodes).size !== itemCodes.length || variants.some((variant) => {
     if (
-      !variant.name ||
-      !variant.color ||
+      !variant.itemCode ||
       (!variant.sizeVariants?.length && !variant.price) ||
       variant.images.length === 0
     ) {
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest) {
 
     if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants))) {
       return NextResponse.json(
-        { error: "Each color needs a name, swatch, and photos, plus a valid price and stock quantity for every selected size." },
+        { error: "Each item variant needs a unique item code and photos, plus a valid price and stock quantity for every selected size." },
         { status: 400 }
       );
     }
@@ -200,7 +201,7 @@ export async function PUT(req: NextRequest) {
 
     if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants))) {
       return NextResponse.json(
-        { error: "Each color needs a name, swatch, and photos, plus a valid price and stock quantity for every selected size." },
+        { error: "Each item variant needs a unique item code and photos, plus a valid price and stock quantity for every selected size." },
         { status: 400 }
       );
     }

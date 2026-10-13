@@ -70,7 +70,9 @@ export default function CartPage() {
               <div className="flex flex-1 items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-semibold text-[#111111]">{item.name}</h2>
-                  <p className="mt-1 text-sm text-[#666]">{item.color || "Default color"}</p>
+                  {item.itemCode || item.color ? (
+                    <p className="mt-1 text-sm text-[#666]">Item code: {item.itemCode || item.color}</p>
+                  ) : null}
                   <div className="mt-3 flex items-center gap-3">
                     <button
                       onClick={() => decrementItem(item.id)}

@@ -9,6 +9,7 @@ type OrderItem = {
   name: string;
   quantity: number;
   price: number;
+  itemCode?: string;
   color?: string;
   size?: string;
 };
@@ -172,7 +173,7 @@ export default function AdminOrdersPage() {
                     <div key={String(it.id)} className="flex items-center justify-between rounded border border-[#f1f1f1] p-2">
                       <div>
                         <div className="font-medium">{it.name}</div>
-                        <div className="text-sm text-[#6a6a6a]">Qty: {it.quantity} {it.color ? `• ${it.color}` : ""} {it.size ? `• ${it.size}` : ""}</div>
+                        <div className="text-sm text-[#6a6a6a]">Qty: {it.quantity} {it.itemCode || it.color ? `• Item code: ${it.itemCode || it.color}` : ""} {it.size ? `• Size: ${it.size}` : ""}</div>
                       </div>
                       <div className="font-semibold">${(it.price * it.quantity).toFixed(2)}</div>
                     </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, Suspense } from "react";
+import { getProductVariantItemCode, type ProductColorVariant } from "@/types/product";
 
 const formatProductBadge = (badge?: string) => {
   const cleanBadge = (badge || "In stock").trim();
@@ -24,10 +25,10 @@ type Product = {
   discountPercentage?: number;
   colors?: string[];
   sizes?: string[];
+  colorVariants?: ProductColorVariant[];
 };
 
 const sizeOptions = ["XS", "S", "M", "L", "XL", "XXL"];
-const defaultColorPalette = ["#ff3b30", "#f5f5f5", "#111111", "#ffcf5a", "#7cc5d4"];
 
 const parsePrice = (value: string) => {
   const numericValue = Number(String(value).replace(/[^\d.]/g, ""));
@@ -42,7 +43,7 @@ function ShopWithSidebarContent() {
   const searchParams = useSearchParams();
   const query = (searchParams.get("q") || "").trim().toLowerCase();
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedItemCodes, setSelectedItemCodes] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState(6993);
   const [selectedPrice, setSelectedPrice] = useState(6993);
@@ -83,17 +84,20 @@ function ShopWithSidebarContent() {
     loadProducts();
   }, []);
 
-  const availableColors = useMemo(() => {
-    const colors = new Set<string>();
+  const availableItemCodes = useMemo(() => {
+    const itemCodes = new Set<string>();
 
     products.forEach((product) => {
       if (categoryParam && product.category !== selectedCategory) return;
-      (product.colors || []).forEach((color) => {
-        if (color) colors.add(color);
+      const codes = product.colorVariants?.length
+        ? product.colorVariants.map(getProductVariantItemCode)
+        : product.colors || [];
+      codes.forEach((itemCode) => {
+        if (itemCode) itemCodes.add(itemCode);
       });
     });
 
-    return Array.from(colors).length ? Array.from(colors) : defaultColorPalette;
+    return Array.from(itemCodes);
   }, [products, categoryParam, selectedCategory]);
 
   const filteredProducts = useMemo(() => {
@@ -105,9 +109,11 @@ function ShopWithSidebarContent() {
         if (!haystack.includes(query)) return false;
       }
 
-      if (selectedColors.length > 0) {
-        const matchesColor = (product.colors || []).some((color) => selectedColors.includes(color));
-        if (!matchesColor) return false;
+      if (selectedItemCodes.length > 0) {
+        const productItemCodes = product.colorVariants?.length
+          ? product.colorVariants.map(getProductVariantItemCode)
+          : product.colors || [];
+        if (!productItemCodes.some((itemCode) => selectedItemCodes.includes(itemCode))) return false;
       }
       if (selectedSizes.length > 0) {
         const matchesSize = (product.sizes || []).some((size) => selectedSizes.includes(size));
@@ -115,13 +121,13 @@ function ShopWithSidebarContent() {
       }
       return parsePrice(product.price) <= selectedPrice;
     });
-  }, [products, categoryParam, selectedCategory, selectedColors, selectedSizes, selectedPrice, query]);
+  }, [products, categoryParam, selectedCategory, selectedItemCodes, selectedSizes, selectedPrice, query]);
 
   const updateCategory = (category: "women" | "men" | "accessories") => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("category", category);
     router.push(`/shop-with-sidebar?${params.toString()}`);
-    setSelectedColors([]);
+    setSelectedItemCodes([]);
     setSelectedSizes([]);
     setSelectedPrice(maxPrice);
   };
@@ -189,20 +195,21 @@ function ShopWithSidebarContent() {
 
           <div>
             <div className="mb-4 text-sm font-bold uppercase tracking-[0.12em] text-[#111111]">
-              Color
+              Item code
             </div>
-            <div className="flex flex-wrap gap-3">
-              {availableColors.map((color) => {
-                const isSelected = selectedColors.includes(color);
+            <div className="flex flex-wrap gap-2">
+              {availableItemCodes.map((itemCode) => {
+                const isSelected = selectedItemCodes.includes(itemCode);
                 return (
                   <button
-                    key={color}
+                    key={itemCode}
                     type="button"
-                    aria-label={`Filter by ${color}`}
-                    onClick={() => setSelectedColors((current) => toggleValue(color, current))}
-                    className={`h-6 w-6 rounded-full border transition ${isSelected ? "ring-2 ring-[#111111] ring-offset-2" : "border-[#d9d7d2]"}`}
-                    style={{ backgroundColor: color }}
-                  />
+                    aria-pressed={isSelected}
+                    onClick={() => setSelectedItemCodes((current) => toggleValue(itemCode, current))}
+                    className={`rounded border px-3 py-1.5 text-xs transition ${isSelected ? "border-[#111111] bg-[#111111] text-white" : "border-[#d9d7d2] bg-white text-[#111111]"}`}
+                  >
+                    {itemCode}
+                  </button>
                 );
               })}
             </div>

@@ -7,7 +7,7 @@ import { useCart } from "@/hooks/useCart";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 import { useAppSelector } from "@/redux/store";
 import SizeChartModal from "@/components/Common/SizeChartModal";
-import type { ProductColorVariant } from "@/types/product";
+import { getProductVariantItemCode, type ProductColorVariant } from "@/types/product";
 
 type StoreProduct = {
   id: string;
@@ -69,7 +69,7 @@ export default function ProductDetailPage() {
   const { addItem, clearCart, cartDetails } = useCart();
   const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
   const [products, setProducts] = useState<StoreProduct[]>([]);
-  const [selectedColor, setSelectedColor] = useState<string>("#e0b63d");
+  const [selectedItemCode, setSelectedItemCode] = useState<string>("");
   const [selectedGalleryImage, setSelectedGalleryImage] = useState("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
@@ -114,6 +114,7 @@ export default function ProductDetailPage() {
     if (product.colorVariants?.length) return product.colorVariants;
     const images = product.images?.length ? product.images : product.image ? [product.image] : [];
     return (product.colors?.length ? product.colors : product.tone ? [product.tone] : []).map((color) => ({
+      itemCode: color,
       name: color,
       color,
       price: product.price,
@@ -134,9 +135,9 @@ export default function ProductDetailPage() {
     })
     : colorVariants;
   const activeColorVariant =
-    availableColorVariants.find((variant) => variant.color === selectedColor) ||
+    availableColorVariants.find((variant) => getProductVariantItemCode(variant) === selectedItemCode) ||
     availableColorVariants[0] ||
-    colorVariants.find((variant) => variant.color === selectedColor) ||
+    colorVariants.find((variant) => getProductVariantItemCode(variant) === selectedItemCode) ||
     colorVariants[0];
   const selectedSizeVariant = findSizeVariant(activeColorVariant, selectedSize);
   const availableQuantity = activeColorVariant?.sizeVariants?.length
@@ -185,7 +186,7 @@ export default function ProductDetailPage() {
         !variant.sizeVariants ||
         Number(findSizeVariant(variant, initialSize)?.quantity || 0) > 0
       );
-      setSelectedColor(initialColor?.color || colorVariants[0].color);
+      setSelectedItemCode(getProductVariantItemCode(initialColor || colorVariants[0]));
     }
     if (product?.sizes?.length) {
       setSelectedSize(availableSizes[0] || product.sizes[0]);
@@ -196,7 +197,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     setSelectedGalleryImage(activeColorVariant?.images?.[0] || product?.images?.[0] || product?.image || "");
-  }, [product?.id, selectedColor, activeColorVariant?.images, product?.images, product?.image]);
+  }, [product?.id, selectedItemCode, activeColorVariant?.images, product?.images, product?.image]);
 
   const parsePrice = (value: string) => {
     const numericValue = value.replace(/[^\d.]/g, "");
@@ -232,7 +233,7 @@ export default function ProductDetailPage() {
       image: activeColorVariant?.images[0] || product.image,
       price: discountedPrice,
       quantity,
-      color: activeColorVariant?.name || selectedColor,
+      color: activeColorVariant ? getProductVariantItemCode(activeColorVariant) : selectedItemCode,
     });
   };
 
@@ -259,12 +260,12 @@ export default function ProductDetailPage() {
       Number(findSizeVariant(variant, size)?.quantity || 0) > 0
     );
     setSelectedSize(size);
-    setSelectedColor(color?.color || colorVariants[0]?.color || "");
+    setSelectedItemCode(color ? getProductVariantItemCode(color) : colorVariants[0] ? getProductVariantItemCode(colorVariants[0]) : "");
     setQuantity(1);
   };
 
   const selectedCartItemId = product
-    ? `${product.id}-${activeColorVariant?.color || selectedColor || "default"}-${selectedSize || "default"}`
+    ? `${product.id}-${activeColorVariant ? getProductVariantItemCode(activeColorVariant) : selectedItemCode || "default"}-${selectedSize || "default"}`
     : "";
   const quantityAlreadyInCart = Number(cartDetails?.[selectedCartItemId]?.quantity || 0);
   const remainingQuantity = availableQuantity === undefined
@@ -283,8 +284,8 @@ export default function ProductDetailPage() {
       !variant.sizeVariants ||
       Number(findSizeVariant(variant, size)?.quantity || 0) > 0
     );
-    if (!nextAvailableColors.some((variant) => variant.color === selectedColor)) {
-      setSelectedColor(nextAvailableColors[0]?.color || "");
+    if (!nextAvailableColors.some((variant) => getProductVariantItemCode(variant) === selectedItemCode)) {
+      setSelectedItemCode(nextAvailableColors[0] ? getProductVariantItemCode(nextAvailableColors[0]) : "");
     }
     setQuantity(1);
   };
@@ -306,7 +307,7 @@ export default function ProductDetailPage() {
     }
 
     if (!hasColorSelection) {
-      toast.error("Please select a valid color before adding this product.");
+      toast.error("Please select an item code before adding this product.");
       return false;
     }
 
@@ -323,8 +324,8 @@ export default function ProductDetailPage() {
       quantity,
       ...(availableQuantity !== undefined ? { availableQuantity } : {}),
       image: activeColorVariant?.images[0] || product.image,
-      color: activeColorVariant?.name || selectedColor,
-      variantColor: activeColorVariant?.color || selectedColor,
+      itemCode: activeColorVariant ? getProductVariantItemCode(activeColorVariant) : selectedItemCode,
+      variantColor: activeColorVariant?.color,
       size: selectedSize,
       slug: product.slug,
     };
@@ -357,7 +358,7 @@ export default function ProductDetailPage() {
     }
 
     if (!hasColorSelection) {
-      toast.error("Please select a valid color before buying this product.");
+      toast.error("Please select an item code before buying this product.");
       return;
     }
 
@@ -375,8 +376,8 @@ export default function ProductDetailPage() {
       quantity,
       ...(availableQuantity !== undefined ? { availableQuantity } : {}),
       image: activeColorVariant?.images[0] || product.image,
-      color: activeColorVariant?.name || selectedColor,
-      variantColor: activeColorVariant?.color || selectedColor,
+      itemCode: activeColorVariant ? getProductVariantItemCode(activeColorVariant) : selectedItemCode,
+      variantColor: activeColorVariant?.color,
       size: selectedSize,
       slug: product.slug,
     });
@@ -586,28 +587,33 @@ export default function ProductDetailPage() {
 
           <div className="mt-8">
             <div className="mb-3 text-sm font-medium uppercase tracking-[0.12em] text-[#111111]">
-              Color{activeColorVariant?.name ? ` ${activeColorVariant.name}` : ""}
+              Select item code{activeColorVariant ? `: ${getProductVariantItemCode(activeColorVariant)}` : ""}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               {availableColorVariants.map((variant, idx) => (
                 <button
-                  key={`${variant.color}-${idx}`}
+                  key={`${getProductVariantItemCode(variant)}-${idx}`}
                   type="button"
-                  aria-label={`Choose ${variant.name}`}
-                  title={variant.name}
+                  aria-label={`Choose item code ${getProductVariantItemCode(variant)}`}
+                  title={getProductVariantItemCode(variant)}
                   onClick={() => {
-                    setSelectedColor(variant.color);
+                    setSelectedItemCode(getProductVariantItemCode(variant));
                     setQuantity(1);
                   }}
-                  aria-pressed={selectedColor === variant.color}
-                  className={`h-12 w-12 rounded-md border p-1 transition ${selectedColor === variant.color ? "border-[#111111] ring-2 ring-[#111111]/20" : "border-[#d7d4d0]"}`}
-                  style={{ background: variant.color }}
-                />
+                  aria-pressed={selectedItemCode === getProductVariantItemCode(variant)}
+                  className={`rounded-md border px-4 py-2 text-sm font-medium transition ${
+                    selectedItemCode === getProductVariantItemCode(variant)
+                      ? "border-[#111111] bg-[#111111] text-white"
+                      : "border-[#d7d4d0] bg-white text-[#111111] hover:border-[#111111]"
+                  }`}
+                >
+                  {getProductVariantItemCode(variant)}
+                </button>
               ))}
             </div>
             {activeColorVariant?.sizeVariants?.length ? (
               <p className="mt-2 text-xs text-[#6a6a6a]" aria-live="polite">
-                {availableQuantity ? `${availableQuantity} available in this size and color` : "Out of stock in this size and color"}
+                {availableQuantity ? `${availableQuantity} available in this size and item variant` : "Out of stock in this size and item variant"}
               </p>
             ) : null}
           </div>

@@ -17,6 +17,7 @@ export type CartItem = {
   availableQuantity?: number;
   productId?: string;
   variantColor?: string;
+  itemCode?: string;
   color?: string;
   size?: string;
   itemType?: "product" | "gift-voucher";

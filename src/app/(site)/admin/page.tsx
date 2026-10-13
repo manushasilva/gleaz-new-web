@@ -36,7 +36,7 @@ const emptyForm = {
   sizes: [],
   colors: ["#d9b0a8"],
   colorVariants: [{
-    name: "",
+    itemCode: "",
     color: "#d9b0a8",
     price: "",
     images: [],
@@ -237,7 +237,7 @@ export default function AdminPage() {
     if (!size) return;
     const currentVariant = form.colorVariants?.[variantIndex];
     if (currentVariant?.sizeVariants?.some((item) => item.size.toLowerCase() === size.toLowerCase())) {
-      toast.error("That size has already been added to this color.");
+      toast.error("That size has already been added to this item variant.");
       return;
     }
 
@@ -275,10 +275,12 @@ export default function AdminPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!form.colorVariants?.length || form.colorVariants.some((variant) => {
+    if (!form.colorVariants?.length || new Set(
+      form.colorVariants.map((variant) => (variant.itemCode || variant.name || "").trim().toLowerCase())
+    ).size !== form.colorVariants.length || form.colorVariants.some((variant) => {
       const sizeVariants = variant.sizeVariants || [];
       return (
-        !variant.name.trim() ||
+        !variant.itemCode?.trim() ||
         !variant.color ||
         (!sizeVariants.length && !variant.price.trim()) ||
         !variant.images.length ||
@@ -293,7 +295,7 @@ export default function AdminPage() {
         )
       );
     })) {
-      toast.error("Add a name, color, base price, photos, and a valid price and stock quantity for each size.");
+      toast.error("Add an item code, base price, photos, and a valid price and stock quantity for each size.");
       return;
     }
 
@@ -350,6 +352,7 @@ export default function AdminPage() {
     const colorVariants = product.colorVariants?.length
       ? product.colorVariants.map((variant) => ({
         ...variant,
+        itemCode: variant.itemCode || variant.name || "",
         images: [...variant.images],
         sizeVariants: variant.sizeVariants
           ? variant.sizeVariants.map((item) => ({ ...item }))
@@ -360,6 +363,7 @@ export default function AdminPage() {
           })),
       }))
       : (product.colors?.length ? product.colors : [product.tone || "#d9b0a8"]).map((color) => ({
+        itemCode: color,
         name: color,
         color,
         price: product.price,
@@ -505,8 +509,8 @@ export default function AdminPage() {
             <section className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-[#111111]">Color variants</label>
-                  <p className="mt-1 text-xs text-[#6a6a6a]">Customize the available sizes, prices, and stock separately for each color.</p>
+                  <label className="block text-sm font-medium text-[#111111]">Item variants</label>
+                  <p className="mt-1 text-xs text-[#6a6a6a]">Customize the available sizes, prices, and stock separately for each item code.</p>
                 </div>
                 <button
                   type="button"
@@ -514,7 +518,7 @@ export default function AdminPage() {
                   onClick={() => setForm((current) => ({
                     ...current,
                     colorVariants: [...(current.colorVariants || []), {
-                      name: "",
+                      itemCode: "",
                       color: "#d9b0a8",
                       price:
                         current.colorVariants?.[0]?.sizeVariants?.[0]?.price ||
@@ -526,14 +530,14 @@ export default function AdminPage() {
                   }))}
                   className="shrink-0 rounded border border-[#d7d4cf] px-3 py-2 text-xs font-semibold text-[#111111]"
                 >
-                  Add color
+                  Add item variant
                 </button>
               </div>
 
               {(form.colorVariants || []).map((variant, variantIndex) => (
                 <div key={`variant-${variantIndex}`} className="rounded-lg border border-[#e7e3df] bg-[#faf9f7] p-3">
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#6a6a6a]">Color {variantIndex + 1}</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#6a6a6a]">Item variant {variantIndex + 1}</span>
                     {(form.colorVariants?.length || 0) > 1 && (
                       <button
                         type="button"
@@ -556,31 +560,20 @@ export default function AdminPage() {
                         }}
                         className="text-xs font-medium text-red-700 underline"
                       >
-                        Remove color
+                        Remove item variant
                       </button>
                     )}
                   </div>
-                  <div className={`grid gap-3 ${variant.sizeVariants?.length ? "sm:grid-cols-[1fr_64px]" : "sm:grid-cols-[1fr_64px_1fr]"}`}>
+                  <div className={`grid gap-3 ${variant.sizeVariants?.length ? "sm:grid-cols-1" : "sm:grid-cols-2"}`}>
                     <div>
-                      <label htmlFor={`color-name-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Color name</label>
+                      <label htmlFor={`item-code-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Item code</label>
                       <input
-                        id={`color-name-${variantIndex}`}
-                        value={variant.name}
-                        onChange={(event) => updateColorVariant(variantIndex, { name: event.target.value })}
+                        id={`item-code-${variantIndex}`}
+                        value={variant.itemCode || variant.name || ""}
+                        onChange={(event) => updateColorVariant(variantIndex, { itemCode: event.target.value })}
                         className="w-full rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm outline-none focus:border-[#111111]"
-                        placeholder="Pale Pink"
+                        placeholder="e.g. BL-001"
                         required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor={`color-swatch-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Swatch</label>
-                      <input
-                        id={`color-swatch-${variantIndex}`}
-                        type="color"
-                        value={variant.color}
-                        onChange={(event) => updateColorVariant(variantIndex, { color: event.target.value })}
-                        aria-label={`${variant.name || `Color ${variantIndex + 1}`} swatch color`}
-                        className="h-10 w-full cursor-pointer rounded border border-[#d7d4cf] bg-white p-1"
                       />
                     </div>
                     {!variant.sizeVariants?.length && (
@@ -601,7 +594,7 @@ export default function AdminPage() {
                     )}
                   </div>
                   <div className="mt-3">
-                    <label htmlFor={`color-images-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Photos for {variant.name || `Color ${variantIndex + 1}`}</label>
+                    <label htmlFor={`color-images-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Photos for {variant.itemCode || variant.name || `item variant ${variantIndex + 1}`}</label>
                     <input
                       id={`color-images-${variantIndex}`}
                       type="file"
@@ -611,17 +604,17 @@ export default function AdminPage() {
                       onChange={(event) => handleVariantImageUpload(event, variantIndex)}
                       className="w-full rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm text-[#111111] outline-none file:mr-3 file:rounded file:border-0 file:bg-[#111111] file:px-3 file:py-2 file:text-xs file:font-medium file:text-white focus:border-[#111111] disabled:opacity-60"
                     />
-                    {uploadingVariantIndex === variantIndex && <p className="mt-2 text-xs text-[#6a6a6a]">Uploading color photos...</p>}
-                    {!variant.images.length && <p className="mt-2 text-xs text-[#a12727]">Upload at least one image for this color.</p>}
+                    {uploadingVariantIndex === variantIndex && <p className="mt-2 text-xs text-[#6a6a6a]">Uploading item photos...</p>}
+                    {!variant.images.length && <p className="mt-2 text-xs text-[#a12727]">Upload at least one image for this item variant.</p>}
                     {variant.images.length > 0 && (
                       <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
                         {variant.images.map((image, imageIndex) => (
                           <div key={`${image}-${imageIndex}`} className="group relative aspect-square overflow-hidden rounded-lg border border-[#e7e3df] bg-white">
-                            <img src={image} alt={`${variant.name || "Color"} photo ${imageIndex + 1}`} className="h-full w-full object-cover" />
+                            <img src={image} alt={`${variant.itemCode || variant.name || "Item variant"} photo ${imageIndex + 1}`} className="h-full w-full object-cover" />
                             {imageIndex === 0 && <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold text-[#111111]">Variant main</span>}
                             <button
                               type="button"
-                              aria-label={`Remove ${variant.name || "color"} photo ${imageIndex + 1}`}
+                              aria-label={`Remove ${variant.itemCode || variant.name || "item variant"} photo ${imageIndex + 1}`}
                               onClick={() => updateColorVariant(variantIndex, {
                                 images: variant.images.filter((_, index) => index !== imageIndex),
                               })}
@@ -636,7 +629,7 @@ export default function AdminPage() {
                   </div>
                   <div className="mt-4">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-[#111111]">
-                      Sizes for this color
+                      Sizes for this item variant
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {sizeOptions.map((size) => {
@@ -659,7 +652,7 @@ export default function AdminPage() {
                       })}
                     </div>
                     <div className="mt-3 flex gap-2">
-                      <label className="sr-only" htmlFor={`custom-size-${variantIndex}`}>Custom size for {variant.name || `color ${variantIndex + 1}`}</label>
+                      <label className="sr-only" htmlFor={`custom-size-${variantIndex}`}>Custom size for {variant.itemCode || variant.name || `item variant ${variantIndex + 1}`}</label>
                       <input
                         id={`custom-size-${variantIndex}`}
                         value={customSizeInputs[variantIndex] || ""}
@@ -700,12 +693,12 @@ export default function AdminPage() {
                                 type="button"
                                 onClick={() => updateColorSizeSelection(variantIndex, size)}
                                 className="text-left text-sm font-semibold text-red-700"
-                                aria-label={`Remove size ${size} from ${variant.name || `color ${variantIndex + 1}`}`}
+                                aria-label={`Remove size ${size} from ${variant.itemCode || variant.name || `item variant ${variantIndex + 1}`}`}
                                 title={`Remove size ${size}`}
                               >
                                 {size} ×
                               </button>
-                              <label className="sr-only" htmlFor={`size-price-${variantIndex}-${size}`}>Price for {variant.name} size {size}</label>
+                              <label className="sr-only" htmlFor={`size-price-${variantIndex}-${size}`}>Price for {variant.itemCode || variant.name || "item variant"} size {size}</label>
                               <input
                                 id={`size-price-${variantIndex}-${size}`}
                                 type="number"
@@ -721,7 +714,7 @@ export default function AdminPage() {
                                 className="min-w-0 rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm outline-none focus:border-[#111111]"
                                 placeholder="Price (LKR)"
                               />
-                              <label className="sr-only" htmlFor={`size-quantity-${variantIndex}-${size}`}>Stock quantity for {variant.name} size {size}</label>
+                              <label className="sr-only" htmlFor={`size-quantity-${variantIndex}-${size}`}>Stock quantity for {variant.itemCode || variant.name || "item variant"} size {size}</label>
                               <input
                                 id={`size-quantity-${variantIndex}-${size}`}
                                 type="number"

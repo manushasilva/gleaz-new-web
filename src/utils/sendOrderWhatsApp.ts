@@ -13,7 +13,7 @@ export async function sendOrderWhatsApp(order: OrderEmailPayload) {
 
   const graphApiVersion = process.env.WHATSAPP_GRAPH_API_VERSION || "v23.0";
   const itemLines = order.items.map((item) =>
-    `• ${item.name} × ${item.quantity}${item.color ? ` | Color: ${item.color}` : ""}${item.size ? ` | Size: ${item.size}` : ""} — ${(item.price * item.quantity).toFixed(2)}`
+    `• ${item.name} × ${item.quantity}${item.itemCode || item.color ? ` | Item code: ${item.itemCode || item.color}` : ""}${item.size ? ` | Size: ${item.size}` : ""} — ${(item.price * item.quantity).toFixed(2)}`
   );
   const orderDetails = [
     `Customer: ${order.customerName}`,

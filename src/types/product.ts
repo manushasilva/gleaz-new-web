@@ -18,12 +18,17 @@ export type Product = {
 };
 
 export type ProductColorVariant = {
-  name: string;
+  itemCode?: string;
+  name?: string;
   color: string;
   price: string;
   images: string[];
   sizeVariants?: ProductSizeVariant[];
 };
+
+export function getProductVariantItemCode(variant: ProductColorVariant): string {
+  return variant.itemCode?.trim() || variant.name?.trim() || variant.color;
+}
 
 export type ProductSizeVariant = {
   size: string;

@@ -16,6 +16,7 @@ export type OrderEmailPayload = {
     name: string;
     quantity: number;
     price: number;
+    itemCode?: string;
     color?: string;
     size?: string;
   }>;
@@ -94,7 +95,7 @@ export async function sendOrderEmail(order: OrderEmailPayload) {
         <tr>
           <td style="padding:12px 8px;border-bottom:1px solid #f1f5f9;">${escapeHtml(item.name)}</td>
           <td style="padding:12px 8px;border-bottom:1px solid #f1f5f9;">${escapeHtml(item.quantity)}</td>
-          <td style="padding:12px 8px;border-bottom:1px solid #f1f5f9;">${escapeHtml(item.color || "-")}</td>
+          <td style="padding:12px 8px;border-bottom:1px solid #f1f5f9;">${escapeHtml(item.itemCode || item.color || "-")}</td>
           <td style="padding:12px 8px;border-bottom:1px solid #f1f5f9;">${escapeHtml(item.size || "-")}</td>
           <td style="padding:12px 8px;border-bottom:1px solid #f1f5f9;">${formatPrice(item.price * item.quantity)}</td>
         </tr>
@@ -123,7 +124,7 @@ export async function sendOrderEmail(order: OrderEmailPayload) {
           <tr style="background:#f8fafc;">
             <th align="left" style="padding:12px 8px;">Item</th>
             <th align="left" style="padding:12px 8px;">Qty</th>
-            <th align="left" style="padding:12px 8px;">Color</th>
+            <th align="left" style="padding:12px 8px;">Item code</th>
             <th align="left" style="padding:12px 8px;">Size</th>
             <th align="left" style="padding:12px 8px;">Total</th>
           </tr>

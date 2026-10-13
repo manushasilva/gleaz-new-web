@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import bcrypt from "bcrypt";
 import { createClient } from "@supabase/supabase-js";
-import type { ProductColorVariant } from "@/types/product";
+import { getProductVariantItemCode, type ProductColorVariant } from "@/types/product";
 
 export type StoreUser = {
   id: string;
@@ -559,12 +559,22 @@ export async function saveOrder(order: StoreOrder) {
       throw new OrderValidationError("A product in your cart is no longer available. Please refresh your cart.");
     }
 
+    const itemCode = String(item.itemCode || item.color || "").trim();
+    const requestedVariantColor = String(item.variantColor || "");
     const colorVariant = product.colorVariants?.find(
-      (variant) =>
-        variant.color === String(item.variantColor || "") ||
-        variant.name === String(item.color || "")
-    );
-    if (!colorVariant?.sizeVariants?.length) return item;
+      (variant) => itemCode &&
+        getProductVariantItemCode(variant).toLowerCase() === itemCode.toLowerCase()
+    ) || (!itemCode
+      ? product.colorVariants?.find((variant) => variant.color === requestedVariantColor)
+      : undefined);
+    if (product.colorVariants?.length && !colorVariant) {
+      throw new OrderValidationError("An item code in your cart is no longer available. Please refresh your cart.");
+    }
+
+    const orderItem = colorVariant
+      ? { ...item, itemCode: getProductVariantItemCode(colorVariant) }
+      : item;
+    if (!colorVariant?.sizeVariants?.length) return orderItem;
 
     const sizeVariant = colorVariant.sizeVariants.find(
       (variant) => variant.size.toLowerCase() === String(item.size || "").toLowerCase()
@@ -575,7 +585,7 @@ export async function saveOrder(order: StoreOrder) {
     }
     if (sizeVariant.quantity < requestedQuantity) {
       throw new OrderValidationError(
-        `Only ${sizeVariant.quantity} item(s) remain in ${colorVariant.name}, size ${sizeVariant.size}.`
+        `Only ${sizeVariant.quantity} item(s) remain for item code ${getProductVariantItemCode(colorVariant)}, size ${sizeVariant.size}.`
       );
     }
 
@@ -587,7 +597,7 @@ export async function saveOrder(order: StoreOrder) {
     sizeVariant.quantity -= requestedQuantity;
     product.updatedAt = new Date().toISOString();
     const discountRate = Math.min(Math.max(Number(product.discountPercentage) || 0, 0), 100) / 100;
-    return { ...item, price: Math.round(basePrice * (1 - discountRate)) };
+    return { ...orderItem, price: Math.round(basePrice * (1 - discountRate)) };
   });
   const orderTotal = items.reduce(
     (total, item) => total + Number(item.price || 0) * Number(item.quantity || 0),

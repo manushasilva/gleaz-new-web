@@ -59,7 +59,8 @@ export default function CheckoutPage() {
             name: item.name,
             quantity: item.quantity,
             price: Number(item.price || 0),
-            color: item.color,
+            itemCode: item.itemCode || item.color,
+            variantColor: item.variantColor,
             size: item.size,
             image: item.image,
             slug: item.slug,
@@ -241,7 +242,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="min-w-0 flex-1 py-1">
                     <p className="line-clamp-2 text-sm font-semibold leading-5 text-dark">{item.name}</p>
-                    {(item.color || item.size) && <p className="mt-1 truncate text-xs text-body">{[item.color, item.size].filter(Boolean).join(" · ")}</p>}
+                    {(item.itemCode || item.color || item.size) && <p className="mt-1 truncate text-xs text-body">{[item.itemCode || item.color ? `Item code: ${item.itemCode || item.color}` : "", item.size ? `Size: ${item.size}` : ""].filter(Boolean).join(" · ")}</p>}
                   </div>
                   <p className="shrink-0 py-1 text-right text-sm font-semibold text-dark">{formatPrice(Number(item.price || 0) * Number(item.quantity || 0))}</p>
                 </div>
