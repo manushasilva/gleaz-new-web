@@ -9,6 +9,8 @@ const sizeChartTabs = [
   { id: "trouser", label: "Trouser" },
 ] as const;
 
+const visibleSizeChartTabs = sizeChartTabs.filter((tab) => tab.id !== "standard");
+
 type SizeChartTab = (typeof sizeChartTabs)[number]["id"];
 
 export const sizeChartRows = [
@@ -26,7 +28,7 @@ type SizeChartModalProps = {
 };
 
 export default function SizeChartModal({ isOpen, onClose }: SizeChartModalProps) {
-  const [activeTab, setActiveTab] = useState<SizeChartTab>("standard");
+  const [activeTab, setActiveTab] = useState<SizeChartTab>("blouse");
 
   if (!isOpen) return null;
 
@@ -55,7 +57,7 @@ export default function SizeChartModal({ isOpen, onClose }: SizeChartModalProps)
         </div>
 
         <div role="tablist" aria-label="Size chart type" className="mb-5 flex overflow-x-auto border-b border-[#e5e1dc]">
-          {sizeChartTabs.map((tab) => (
+          {visibleSizeChartTabs.map((tab) => (
             <button
               key={tab.id}
               id={`size-chart-tab-${tab.id}`}
