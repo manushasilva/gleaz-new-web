@@ -501,11 +501,17 @@ export default function AdminPage() {
                     colorVariants: [...(current.colorVariants || []), {
                       name: "",
                       color: "#d9b0a8",
-                      price: current.colorVariants?.[0]?.price || current.price,
+                      price:
+                        current.colorVariants?.[0]?.sizeVariants?.[0]?.price ||
+                        current.colorVariants?.[0]?.price ||
+                        current.price,
                       images: [],
                       sizeVariants: (current.sizes || []).map((size) => ({
                         size,
-                        price: current.colorVariants?.[0]?.price || current.price,
+                        price:
+                          current.colorVariants?.[0]?.sizeVariants?.find((item) => item.size === size)?.price ||
+                          current.colorVariants?.[0]?.price ||
+                          current.price,
                         quantity: 0,
                       })),
                     }],
@@ -543,7 +549,7 @@ export default function AdminPage() {
                       </button>
                     )}
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-[1fr_64px_1fr]">
+                  <div className={`grid gap-3 ${form.sizes?.length ? "sm:grid-cols-[1fr_64px]" : "sm:grid-cols-[1fr_64px_1fr]"}`}>
                     <div>
                       <label htmlFor={`color-name-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Color name</label>
                       <input
@@ -566,17 +572,22 @@ export default function AdminPage() {
                         className="h-10 w-full cursor-pointer rounded border border-[#d7d4cf] bg-white p-1"
                       />
                     </div>
-                    <div>
-                      <label htmlFor={`color-price-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Price (LKR)</label>
-                      <input
-                        id={`color-price-${variantIndex}`}
-                        value={variant.price}
-                        onChange={(event) => updateColorVariant(variantIndex, { price: event.target.value })}
-                        required={(form.sizes || []).length === 0}
-                        className="w-full rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm outline-none focus:border-[#111111]"
-                        placeholder={(form.sizes || []).length ? "Size prices below" : "4500"}
-                      />
-                    </div>
+                    {!form.sizes?.length && (
+                      <div>
+                        <label htmlFor={`color-price-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Price (LKR)</label>
+                        <input
+                          id={`color-price-${variantIndex}`}
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={variant.price}
+                          onChange={(event) => updateColorVariant(variantIndex, { price: event.target.value })}
+                          required
+                          className="w-full rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm outline-none focus:border-[#111111]"
+                          placeholder="4500"
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="mt-3">
                     <label htmlFor={`color-images-${variantIndex}`} className="mb-1 block text-xs font-medium text-[#111111]">Photos for {variant.name || `Color ${variantIndex + 1}`}</label>
