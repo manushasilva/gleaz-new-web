@@ -15,6 +15,7 @@ type Product = {
   badge: string;
   tone: string;
   slug: string;
+  quantity?: number;
   sizes?: string[];
   colors?: string[];
   colorVariants?: ProductColorVariant[];
@@ -34,7 +35,13 @@ const emptyForm = {
   slug: "",
   sizes: ["S", "M", "L"],
   colors: ["#d9b0a8"],
-  colorVariants: [{ name: "", color: "#d9b0a8", price: "", images: [] }],
+  colorVariants: [{
+    name: "",
+    color: "#d9b0a8",
+    price: "",
+    images: [],
+    sizeVariants: ["S", "M", "L"].map((size) => ({ size, price: "", quantity: 0 })),
+  }],
   discountPercentage: 0,
 };
 
@@ -184,6 +191,33 @@ export default function AdminPage() {
     });
   };
 
+  const updateSizeSelection = (size: string) => {
+    setForm((current) => {
+      const currentSizes = current.sizes || [];
+      const sizes = currentSizes.includes(size)
+        ? currentSizes.filter((item) => item !== size)
+        : [...currentSizes, size];
+
+      return {
+        ...current,
+        sizes,
+        colorVariants: (current.colorVariants || []).map((variant) => {
+          const existingSizeVariants = variant.sizeVariants || [];
+          return {
+            ...variant,
+            sizeVariants: sizes.map((nextSize) =>
+              existingSizeVariants.find((item) => item.size === nextSize) || {
+                size: nextSize,
+                price: variant.price,
+                quantity: 0,
+              }
+            ),
+          };
+        }),
+      };
+    });
+  };
+
   const handleLandingImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -215,9 +249,16 @@ export default function AdminPage() {
     event.preventDefault();
 
     if (!form.colorVariants?.length || form.colorVariants.some((variant) =>
-      !variant.name.trim() || !variant.color || !variant.price.trim() || !variant.images.length
+      !variant.name.trim() ||
+      !variant.color ||
+      (!(form.sizes || []).length && !variant.price.trim()) ||
+      !variant.images.length ||
+      (form.sizes || []).some((size) => {
+        const inventory = variant.sizeVariants?.find((item) => item.size === size);
+        return !inventory?.price.trim() || !Number.isInteger(inventory.quantity) || inventory.quantity < 0;
+      })
     )) {
-      toast.error("Add a name, color, price, and at least one image for every color.");
+      toast.error("Add a name, color, base price, photos, and a valid price and stock quantity for each size.");
       return;
     }
 
@@ -227,14 +268,17 @@ export default function AdminPage() {
       const payload: Product = {
         ...form,
         id: form.id || crypto.randomUUID(),
-        price: form.colorVariants[0].price,
+        price: form.colorVariants[0].sizeVariants?.[0]?.price || form.colorVariants[0].price,
         image: form.colorVariants[0].images[0],
         images: Array.from(new Set(form.colorVariants.flatMap((variant) => variant.images))),
         slug: form.slug || form.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
         sizes: Array.isArray(form.sizes) ? form.sizes.filter(Boolean) : [],
         colors: form.colorVariants.map((variant) => variant.color),
         tone: form.colorVariants[0].color,
-        colorVariants: form.colorVariants,
+        colorVariants: form.colorVariants.map((variant) => ({
+          ...variant,
+          price: variant.sizeVariants?.[0]?.price || variant.price,
+        })),
         discountPercentage: Number(form.discountPercentage) > 0 ? Math.min(Number(form.discountPercentage), 100) : 0,
       };
 
@@ -263,13 +307,31 @@ export default function AdminPage() {
     const existingImages = Array.isArray(product.images) && product.images.length
       ? product.images
       : product.image ? [product.image] : [];
+    const existingSizes = Array.isArray(product.sizes) && product.sizes.length
+      ? product.sizes
+      : ["S", "M", "L"];
     const colorVariants = product.colorVariants?.length
-      ? product.colorVariants.map((variant) => ({ ...variant, images: [...variant.images] }))
+      ? product.colorVariants.map((variant) => ({
+        ...variant,
+        images: [...variant.images],
+        sizeVariants: existingSizes.map((size) =>
+          variant.sizeVariants?.find((item) => item.size === size) || {
+            size,
+            price: variant.price,
+            quantity: product.quantity ?? 0,
+          }
+        ),
+      }))
       : (product.colors?.length ? product.colors : [product.tone || "#d9b0a8"]).map((color) => ({
         name: color,
         color,
         price: product.price,
         images: existingImages,
+        sizeVariants: existingSizes.map((size) => ({
+          size,
+          price: product.price,
+          quantity: product.quantity ?? 0,
+        })),
       }));
 
     setEditingId(product.id);
@@ -277,7 +339,7 @@ export default function AdminPage() {
       ...emptyForm,
       ...product,
       images: Array.from(new Set(colorVariants.flatMap((variant) => variant.images))),
-      sizes: Array.isArray(product.sizes) && product.sizes.length ? product.sizes : ["S", "M", "L"],
+      sizes: existingSizes,
       colors: colorVariants.map((variant) => variant.color),
       colorVariants,
       tone: colorVariants[0]?.color || product.tone || "#d9b0a8",
@@ -401,11 +463,35 @@ export default function AdminPage() {
               </select>
             </div>
 
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#111111]">Available sizes</label>
+              <div className="flex flex-wrap gap-2">
+                {sizeOptions.map((size) => {
+                  const selected = Array.isArray(form.sizes) && form.sizes.includes(size);
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => updateSizeSelection(size)}
+                      className={`rounded border px-3 py-2 text-sm font-medium transition ${
+                        selected
+                          ? "border-[#111111] bg-[#111111] text-white"
+                          : "border-[#d7d4cf] bg-white text-[#111111]"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-[#6a6a6a]">Choose sizes first, then set a different price and stock quantity for each color and size.</p>
+            </div>
+
             <section className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <label className="block text-sm font-medium text-[#111111]">Color variants</label>
-                  <p className="mt-1 text-xs text-[#6a6a6a]">Set a price and upload a separate photo gallery for each color.</p>
+                  <p className="mt-1 text-xs text-[#6a6a6a]">Set each color, its photo gallery, and size-by-size price and stock.</p>
                 </div>
                 <button
                   type="button"
@@ -417,6 +503,11 @@ export default function AdminPage() {
                       color: "#d9b0a8",
                       price: current.colorVariants?.[0]?.price || current.price,
                       images: [],
+                      sizeVariants: (current.sizes || []).map((size) => ({
+                        size,
+                        price: current.colorVariants?.[0]?.price || current.price,
+                        quantity: 0,
+                      })),
                     }],
                   }))}
                   className="shrink-0 rounded border border-[#d7d4cf] px-3 py-2 text-xs font-semibold text-[#111111]"
@@ -481,9 +572,9 @@ export default function AdminPage() {
                         id={`color-price-${variantIndex}`}
                         value={variant.price}
                         onChange={(event) => updateColorVariant(variantIndex, { price: event.target.value })}
+                        required={(form.sizes || []).length === 0}
                         className="w-full rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm outline-none focus:border-[#111111]"
-                        placeholder="4500"
-                        required
+                        placeholder={(form.sizes || []).length ? "Size prices below" : "4500"}
                       />
                     </div>
                   </div>
@@ -521,6 +612,57 @@ export default function AdminPage() {
                       </div>
                     )}
                   </div>
+                  {(form.sizes || []).length > 0 && (
+                    <div className="mt-4">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-[#111111]">
+                        Price and stock by size
+                      </p>
+                      <div className="space-y-2">
+                        {form.sizes?.map((size) => {
+                          const inventory = variant.sizeVariants?.find((item) => item.size === size);
+                          return (
+                            <div key={`${variantIndex}-${size}`} className="grid grid-cols-[48px_1fr_1fr] items-center gap-2">
+                              <span className="text-sm font-semibold text-[#111111]">{size}</span>
+                              <label className="sr-only" htmlFor={`size-price-${variantIndex}-${size}`}>Price for {variant.name} size {size}</label>
+                              <input
+                                id={`size-price-${variantIndex}-${size}`}
+                                type="number"
+                                min="0"
+                                step="1"
+                                required
+                                value={inventory?.price || ""}
+                                onChange={(event) => updateColorVariant(variantIndex, {
+                                  sizeVariants: (variant.sizeVariants || []).map((item) =>
+                                    item.size === size ? { ...item, price: event.target.value } : item
+                                  ),
+                                })}
+                                className="min-w-0 rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm outline-none focus:border-[#111111]"
+                                placeholder="Price (LKR)"
+                              />
+                              <label className="sr-only" htmlFor={`size-quantity-${variantIndex}-${size}`}>Stock quantity for {variant.name} size {size}</label>
+                              <input
+                                id={`size-quantity-${variantIndex}-${size}`}
+                                type="number"
+                                min="0"
+                                step="1"
+                                required
+                                value={inventory?.quantity ?? 0}
+                                onChange={(event) => updateColorVariant(variantIndex, {
+                                  sizeVariants: (variant.sizeVariants || []).map((item) =>
+                                    item.size === size
+                                      ? { ...item, quantity: Number(event.target.value) || 0 }
+                                      : item
+                                  ),
+                                })}
+                                className="min-w-0 rounded-md border border-[#d7d4cf] bg-white px-3 py-2 text-sm outline-none focus:border-[#111111]"
+                                placeholder="Qty"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </section>
@@ -546,35 +688,6 @@ export default function AdminPage() {
                 className="w-full rounded-md border border-[#d7d4cf] px-3 py-2.5 outline-none focus:border-[#111111]"
                 placeholder="30"
               />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#111111]">Available sizes</label>
-              <div className="flex flex-wrap gap-2">
-                {sizeOptions.map((size) => {
-                  const selected = Array.isArray(form.sizes) && form.sizes.includes(size);
-                  return (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => {
-                        const currentSizes = Array.isArray(form.sizes) ? form.sizes : [];
-                        const nextSizes = selected
-                          ? currentSizes.filter((item) => item !== size)
-                          : [...currentSizes, size];
-                        setForm({ ...form, sizes: nextSizes });
-                      }}
-                      className={`rounded border px-3 py-2 text-sm font-medium transition ${
-                        selected
-                          ? "border-[#111111] bg-[#111111] text-white"
-                          : "border-[#d7d4cf] bg-white text-[#111111]"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
 
             <div>

@@ -32,6 +32,7 @@ export type StoreProduct = {
   badge: string;
   tone: string;
   slug: string;
+  quantity?: number;
   description?: string;
   sizes?: string[];
   colors?: string[];
@@ -535,10 +536,80 @@ export async function getUserByIdentifier(identifier: string) {
 
 export async function saveOrder(order: StoreOrder) {
   const store = await readStore();
-  const savedOrder = { ...order, status: order.status || "pending" };
+  const products = store.products.map((product) => ({
+    ...product,
+    colorVariants: product.colorVariants?.map((variant) => ({
+      ...variant,
+      sizeVariants: variant.sizeVariants?.map((sizeVariant) => ({ ...sizeVariant })),
+    })),
+  }));
+  const items = order.items.map((item) => {
+    if (item.itemType === "gift-voucher") return item;
+
+    const productId = String(item.productId || "");
+    if (!productId && !item.slug) return item;
+
+    const product = products.find(
+      (candidate) =>
+        (productId && candidate.id === productId) ||
+        (item.slug && candidate.slug === String(item.slug))
+    );
+    if (!product) {
+      if (!productId) return item;
+      throw new OrderValidationError("A product in your cart is no longer available. Please refresh your cart.");
+    }
+
+    const colorVariant = product.colorVariants?.find(
+      (variant) =>
+        variant.color === String(item.variantColor || "") ||
+        variant.name === String(item.color || "")
+    );
+    if (!colorVariant?.sizeVariants?.length) return item;
+
+    const sizeVariant = colorVariant.sizeVariants.find(
+      (variant) => variant.size === String(item.size || "")
+    );
+    const requestedQuantity = Number(item.quantity);
+    if (!sizeVariant || !Number.isInteger(requestedQuantity) || requestedQuantity < 1) {
+      throw new OrderValidationError("Choose an available product size and color.");
+    }
+    if (sizeVariant.quantity < requestedQuantity) {
+      throw new OrderValidationError(
+        `Only ${sizeVariant.quantity} item(s) remain in ${colorVariant.name}, size ${sizeVariant.size}.`
+      );
+    }
+
+    const basePrice = Number(sizeVariant.price.replace(/[^\d.]/g, ""));
+    if (!Number.isFinite(basePrice) || basePrice <= 0) {
+      throw new Error(`Invalid price for ${product.name}, size ${sizeVariant.size}.`);
+    }
+
+    sizeVariant.quantity -= requestedQuantity;
+    product.updatedAt = new Date().toISOString();
+    const discountRate = Math.min(Math.max(Number(product.discountPercentage) || 0, 0), 100) / 100;
+    return { ...item, price: Math.round(basePrice * (1 - discountRate)) };
+  });
+  const orderTotal = items.reduce(
+    (total, item) => total + Number(item.price || 0) * Number(item.quantity || 0),
+    0
+  );
+  const savedOrder = {
+    ...order,
+    items,
+    orderTotal,
+    status: order.status || "pending",
+  };
+  store.products = products;
   store.orders.unshift(savedOrder);
   await writeStore(store);
   return savedOrder;
+}
+
+export class OrderValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OrderValidationError";
+  }
 }
 
 export async function updateOrderStatus(

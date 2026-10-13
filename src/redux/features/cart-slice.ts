@@ -15,6 +15,8 @@ export type CartItem = {
   image?: string;
   slug?: string;
   availableQuantity?: number;
+  productId?: string;
+  variantColor?: string;
   color?: string;
   size?: string;
   itemType?: "product" | "gift-voucher";
@@ -41,11 +43,19 @@ export const cart = createSlice({
       const existingItem = state.items.find((i) => i.id === item.id);
 
       if (existingItem) {
-        existingItem.quantity += item.quantity || 1;
+        if (item.availableQuantity !== undefined) {
+          existingItem.availableQuantity = item.availableQuantity;
+        }
+        const nextQuantity = existingItem.quantity + (item.quantity || 1);
+        existingItem.quantity = item.availableQuantity === undefined
+          ? nextQuantity
+          : Math.min(nextQuantity, item.availableQuantity);
       } else {
         state.items.push({
           ...item,
-          quantity: item.quantity || 1,
+          quantity: item.availableQuantity === undefined
+            ? item.quantity || 1
+            : Math.min(item.quantity || 1, item.availableQuantity),
         });
       }
     },
@@ -58,7 +68,9 @@ export const cart = createSlice({
       const existingItem = state.items.find((item) => item.id === itemId);
 
       if (existingItem) {
-        existingItem.quantity += 1;
+        existingItem.quantity = existingItem.availableQuantity === undefined
+          ? existingItem.quantity + 1
+          : Math.min(existingItem.quantity + 1, existingItem.availableQuantity);
       }
     },
     decrementItem: (state, action: PayloadAction<string | number>) => {

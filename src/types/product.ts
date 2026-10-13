@@ -22,6 +22,13 @@ export type ProductColorVariant = {
   color: string;
   price: string;
   images: string[];
+  sizeVariants?: ProductSizeVariant[];
+};
+
+export type ProductSizeVariant = {
+  size: string;
+  price: string;
+  quantity: number;
 };
 
 // Add discountPercentage here too if StoreProduct is mapped from or related to this type

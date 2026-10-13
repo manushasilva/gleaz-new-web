@@ -24,6 +24,7 @@ type StoreProduct = {
   sizes?: string[];
   colors?: string[];
   colorVariants?: ProductColorVariant[];
+  quantity?: number;
 };
 
 const fallbackDetails = [
@@ -62,7 +63,7 @@ const getBusinessDayRange = () => {
 export default function ProductDetailPage() {
   const router = useRouter();
   const params = useParams<{ slug?: string | string[] }>();
-  const { addItem, clearCart } = useCart();
+  const { addItem, clearCart, cartDetails } = useCart();
   const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [selectedColor, setSelectedColor] = useState<string>("#e0b63d");
@@ -116,7 +117,28 @@ export default function ProductDetailPage() {
       images,
     }));
   }, [product]);
-  const activeColorVariant = colorVariants.find((variant) => variant.color === selectedColor) || colorVariants[0];
+  const availableSizes = useMemo(() => {
+    if (!product?.sizes?.length) return [];
+    return product.sizes.filter((size) => colorVariants.some((variant) => {
+      if (!variant.sizeVariants) return product.quantity === undefined || product.quantity > 0;
+      return Number(variant.sizeVariants.find((item) => item.size === size)?.quantity || 0) > 0;
+    }));
+  }, [product?.sizes, product?.quantity, colorVariants]);
+  const availableColorVariants = selectedSize
+    ? colorVariants.filter((variant) => {
+      if (!variant.sizeVariants) return product?.quantity === undefined || product.quantity > 0;
+      return Number(variant.sizeVariants.find((item) => item.size === selectedSize)?.quantity || 0) > 0;
+    })
+    : colorVariants;
+  const activeColorVariant =
+    availableColorVariants.find((variant) => variant.color === selectedColor) ||
+    availableColorVariants[0] ||
+    colorVariants.find((variant) => variant.color === selectedColor) ||
+    colorVariants[0];
+  const selectedSizeVariant = activeColorVariant?.sizeVariants?.find((item) => item.size === selectedSize);
+  const availableQuantity = activeColorVariant?.sizeVariants?.length
+    ? Number(selectedSizeVariant?.quantity || 0)
+    : product?.quantity;
 
   useEffect(() => {
     if (!product?.slug) {
@@ -155,14 +177,19 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (colorVariants.length) {
-      setSelectedColor(colorVariants[0].color);
+      const initialSize = availableSizes[0] || product?.sizes?.[0] || "";
+      const initialColor = colorVariants.find((variant) =>
+        !variant.sizeVariants ||
+        Number(variant.sizeVariants.find((item) => item.size === initialSize)?.quantity || 0) > 0
+      );
+      setSelectedColor(initialColor?.color || colorVariants[0].color);
     }
     if (product?.sizes?.length) {
-      setSelectedSize(product.sizes[0]);
+      setSelectedSize(availableSizes[0] || product.sizes[0]);
     } else {
       setSelectedSize("");
     }
-  }, [product?.id, product?.sizes, colorVariants]);
+  }, [product?.id, product?.sizes, colorVariants, availableSizes]);
 
   useEffect(() => {
     setSelectedGalleryImage(activeColorVariant?.images?.[0] || product?.images?.[0] || product?.image || "");
@@ -190,7 +217,7 @@ export default function ProductDetailPage() {
   const handleWishlistToggle = () => {
     if (!product) return;
 
-    const basePrice = parsePrice(activeColorVariant?.price || product.price);
+    const basePrice = parsePrice(selectedSizeVariant?.price || activeColorVariant?.price || product.price);
     const discountedPrice = Number(product.discountPercentage) > 0
       ? Math.round(basePrice * (1 - Number(product.discountPercentage) / 100))
       : basePrice;
@@ -223,18 +250,49 @@ export default function ProductDetailPage() {
   };
 
   const handleClearSelections = () => {
-    setSelectedSize(product?.sizes?.[0] || "");
-    setSelectedColor(colorVariants[0]?.color || "");
+    const size = availableSizes[0] || product?.sizes?.[0] || "";
+    const color = colorVariants.find((variant) =>
+      !variant.sizeVariants ||
+      Number(variant.sizeVariants.find((item) => item.size === size)?.quantity || 0) > 0
+    );
+    setSelectedSize(size);
+    setSelectedColor(color?.color || colorVariants[0]?.color || "");
+    setQuantity(1);
+  };
+
+  const selectedCartItemId = product
+    ? `${product.id}-${activeColorVariant?.color || selectedColor || "default"}-${selectedSize || "default"}`
+    : "";
+  const quantityAlreadyInCart = Number(cartDetails?.[selectedCartItemId]?.quantity || 0);
+  const remainingQuantity = availableQuantity === undefined
+    ? undefined
+    : Math.max(availableQuantity - quantityAlreadyInCart, 0);
+
+  useEffect(() => {
+    if (remainingQuantity !== undefined) {
+      setQuantity((current) => Math.max(1, Math.min(current, Math.max(remainingQuantity, 1))));
+    }
+  }, [remainingQuantity]);
+
+  const handleSizeSelection = (size: string) => {
+    setSelectedSize(size);
+    const nextAvailableColors = colorVariants.filter((variant) =>
+      !variant.sizeVariants ||
+      Number(variant.sizeVariants.find((item) => item.size === size)?.quantity || 0) > 0
+    );
+    if (!nextAvailableColors.some((variant) => variant.color === selectedColor)) {
+      setSelectedColor(nextAvailableColors[0]?.color || "");
+    }
     setQuantity(1);
   };
 
   const addProductToCart = () => {
     if (!product) return;
 
-    const availableColors = colorVariants;
+    const availableColors = availableColorVariants;
     const hasSizeSelection = !product.sizes || product.sizes.length === 0 || Boolean(selectedSize);
     const hasColorSelection = availableColors.length === 0 || Boolean(activeColorVariant);
-    const basePrice = parsePrice(activeColorVariant?.price || product.price);
+    const basePrice = parsePrice(selectedSizeVariant?.price || activeColorVariant?.price || product.price);
     const discountedPrice = Number(product.discountPercentage) > 0
       ? Math.round(basePrice * (1 - Number(product.discountPercentage) / 100))
       : basePrice;
@@ -249,13 +307,21 @@ export default function ProductDetailPage() {
       return false;
     }
 
+    if (availableQuantity !== undefined && quantity + quantityAlreadyInCart > availableQuantity) {
+      toast.error("There is not enough stock for that quantity.");
+      return false;
+    }
+
     const cartItem = {
-      id: `${product.id}-${selectedColor || "default"}-${selectedSize || "default"}`,
+      id: selectedCartItemId,
+      productId: product.id,
       name: product.name,
       price: discountedPrice,
       quantity,
+      ...(availableQuantity !== undefined ? { availableQuantity } : {}),
       image: activeColorVariant?.images[0] || product.image,
       color: activeColorVariant?.name || selectedColor,
+      variantColor: activeColorVariant?.color || selectedColor,
       size: selectedSize,
       slug: product.slug,
     };
@@ -274,10 +340,10 @@ export default function ProductDetailPage() {
   const handleBuyNow = () => {
     if (!product) return;
 
-    const availableColors = colorVariants;
+    const availableColors = availableColorVariants;
     const hasSizeSelection = !product.sizes || product.sizes.length === 0 || Boolean(selectedSize);
     const hasColorSelection = availableColors.length === 0 || Boolean(activeColorVariant);
-    const basePrice = parsePrice(activeColorVariant?.price || product.price);
+    const basePrice = parsePrice(selectedSizeVariant?.price || activeColorVariant?.price || product.price);
     const discountedPrice = Number(product.discountPercentage) > 0
       ? Math.round(basePrice * (1 - Number(product.discountPercentage) / 100))
       : basePrice;
@@ -292,14 +358,22 @@ export default function ProductDetailPage() {
       return;
     }
 
+    if (availableQuantity !== undefined && quantity > availableQuantity) {
+      toast.error("There is not enough stock for that quantity.");
+      return;
+    }
+
     clearCart();
     addItem({
-      id: `${product.id}-${selectedColor || "default"}-${selectedSize || "default"}`,
+      id: selectedCartItemId,
+      productId: product.id,
       name: product.name,
       price: discountedPrice,
       quantity,
+      ...(availableQuantity !== undefined ? { availableQuantity } : {}),
       image: activeColorVariant?.images[0] || product.image,
       color: activeColorVariant?.name || selectedColor,
+      variantColor: activeColorVariant?.color || selectedColor,
       size: selectedSize,
       slug: product.slug,
     });
@@ -326,7 +400,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const basePrice = parsePrice(activeColorVariant?.price || product.price);
+  const basePrice = parsePrice(selectedSizeVariant?.price || activeColorVariant?.price || product.price);
   const discountRate = Math.min(Math.max(Number(product.discountPercentage) || 0, 0), 100) / 100;
   const currentUnitPrice = Math.round(basePrice * (1 - discountRate));
   const totalSavings = Math.max(basePrice - currentUnitPrice, 0) * quantity;
@@ -377,7 +451,7 @@ export default function ProductDetailPage() {
         <div className="pt-2">
           <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex rounded border border-[#cdebd8] bg-[#edf9f2] px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1e8d5c]">
-              {product.badge || "In stock"}
+              {availableQuantity === 0 ? "Out of stock" : product.badge || "In stock"}
             </div>
             {Number(product.discountPercentage) > 0 && (
               <div className="inline-flex rounded border border-[#f4d0d0] bg-[#fff1f1] px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#a12727]">
@@ -455,7 +529,7 @@ export default function ProductDetailPage() {
           <div className="mt-8 grid gap-3 rounded-[12px] border border-[#e5e1dc] bg-[#f7f5f2] p-4 sm:grid-cols-3">
             <div>
               <div className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-[#7a7a7a]">Buy</div>
-              <div className="mt-1 text-base font-semibold text-[#111111]">{product.badge || "Available"}</div>
+              <div className="mt-1 text-base font-semibold text-[#111111]">{availableQuantity === 0 ? "Out of stock" : product.badge || "Available"}</div>
             </div>
             <div>
               <div className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-[#7a7a7a]">Selling</div>
@@ -488,11 +562,16 @@ export default function ProductDetailPage() {
                   <button
                     key={size}
                     type="button"
-                    onClick={() => setSelectedSize(size)}
+                    onClick={() => handleSizeSelection(size)}
+                    disabled={!availableSizes.includes(size)}
+                    aria-pressed={selectedSize === size}
+                    aria-label={`${size}${availableSizes.includes(size) ? "" : " - out of stock"}`}
                     className={`min-w-[52px] rounded-md border px-4 py-2 text-sm font-medium transition ${
                       selectedSize === size
                         ? "border-[#111111] bg-[#111111] text-white"
-                        : "border-[#d7d4cf] bg-white text-[#111111]"
+                        : availableSizes.includes(size)
+                          ? "border-[#d7d4cf] bg-white text-[#111111]"
+                          : "cursor-not-allowed border-[#e5e1dc] bg-[#f4f3f1] text-[#aaa] line-through"
                     }`}
                   >
                     {size}
@@ -507,19 +586,27 @@ export default function ProductDetailPage() {
               Color{activeColorVariant?.name ? ` ${activeColorVariant.name}` : ""}
             </div>
             <div className="flex items-center gap-3">
-              {colorVariants.map((variant, idx) => (
+              {availableColorVariants.map((variant, idx) => (
                 <button
                   key={`${variant.color}-${idx}`}
                   type="button"
                   aria-label={`Choose ${variant.name}`}
                   title={variant.name}
-                  onClick={() => setSelectedColor(variant.color)}
+                  onClick={() => {
+                    setSelectedColor(variant.color);
+                    setQuantity(1);
+                  }}
                   aria-pressed={selectedColor === variant.color}
                   className={`h-12 w-12 rounded-md border p-1 transition ${selectedColor === variant.color ? "border-[#111111] ring-2 ring-[#111111]/20" : "border-[#d7d4d0]"}`}
                   style={{ background: variant.color }}
                 />
               ))}
             </div>
+            {activeColorVariant?.sizeVariants?.length ? (
+              <p className="mt-2 text-xs text-[#6a6a6a]" aria-live="polite">
+                {availableQuantity ? `${availableQuantity} available in this size and color` : "Out of stock in this size and color"}
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-8 flex items-center gap-3 text-sm text-[#4d4d4d]">
@@ -537,6 +624,7 @@ export default function ProductDetailPage() {
               <button
                 type="button"
                 onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                disabled={quantity <= 1}
                 className="h-12 w-12 text-xl text-[#111111]"
               >
                 -
@@ -544,7 +632,8 @@ export default function ProductDetailPage() {
               <span className="w-12 text-center text-base font-semibold text-[#111111]">{quantity}</span>
               <button
                 type="button"
-                onClick={() => setQuantity((current) => current + 1)}
+                onClick={() => setQuantity((current) => Math.min(current + 1, remainingQuantity ?? current + 1))}
+                disabled={remainingQuantity !== undefined && quantity >= remainingQuantity}
                 className="h-12 w-12 text-xl text-[#111111]"
               >
                 +
@@ -554,16 +643,18 @@ export default function ProductDetailPage() {
             <button
               type="button"
               onClick={handleAddToCart}
-              className="flex-1 rounded bg-[#111111] px-6 py-4 text-sm font-semibold uppercase tracking-[0.12em] text-white"
+              disabled={availableQuantity === 0 || (remainingQuantity !== undefined && remainingQuantity < 1)}
+              className="flex-1 rounded bg-[#111111] px-6 py-4 text-sm font-semibold uppercase tracking-[0.12em] text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Add to cart
+              {availableQuantity === 0 ? "Out of stock" : "Add to cart"}
             </button>
           </div>
 
           <button
             type="button"
             onClick={handleBuyNow}
-            className="mt-3 w-full rounded bg-[#f1f1ef] px-6 py-4 text-sm font-semibold uppercase tracking-[0.12em] text-[#111111]"
+            disabled={availableQuantity === 0 || quantity > (availableQuantity ?? quantity)}
+            className="mt-3 w-full rounded bg-[#f1f1ef] px-6 py-4 text-sm font-semibold uppercase tracking-[0.12em] text-[#111111] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Buy now
           </button>
@@ -613,7 +704,8 @@ export default function ProductDetailPage() {
         <button
           type="button"
           onClick={handleAddToCart}
-          className="rounded bg-[#111111] px-5 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-white"
+          disabled={availableQuantity === 0 || (remainingQuantity !== undefined && remainingQuantity < 1)}
+          className="rounded bg-[#111111] px-5 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           Add to cart
         </button>

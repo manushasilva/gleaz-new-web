@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProducts, saveProducts } from "@/lib/storeData";
-import type { ProductColorVariant } from "@/types/product";
+import type { ProductColorVariant, ProductSizeVariant } from "@/types/product";
+
+function parseSizeVariants(value: unknown): ProductSizeVariant[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+
+  return value.map((item) => ({
+    size: String(item?.size || "").trim(),
+    price: String(item?.price || "").trim(),
+    quantity: Number(item?.quantity),
+  }));
+}
 
 function parseColorVariants(value: unknown): ProductColorVariant[] | undefined {
   if (!Array.isArray(value)) return undefined;
@@ -12,13 +22,38 @@ function parseColorVariants(value: unknown): ProductColorVariant[] | undefined {
     images: Array.isArray(variant?.images)
       ? variant.images.map((image: unknown) => String(image || "").trim()).filter(Boolean)
       : [],
+    ...(Array.isArray(variant?.sizeVariants)
+      ? { sizeVariants: parseSizeVariants(variant.sizeVariants) }
+      : {}),
   }));
 }
 
-function hasInvalidColorVariant(variants: ProductColorVariant[]) {
-  return variants.some((variant) =>
-    !variant.name || !variant.color || !variant.price || variant.images.length === 0
-  );
+function hasInvalidColorVariant(variants: ProductColorVariant[], sizes: string[]) {
+  return variants.some((variant) => {
+    if (
+      !variant.name ||
+      !variant.color ||
+      (!variant.price && sizes.length === 0) ||
+      variant.images.length === 0
+    ) {
+      return true;
+    }
+
+    if (!variant.sizeVariants) return false;
+    const sizeNames = variant.sizeVariants.map((item) => item.size);
+    return (
+      new Set(sizeNames).size !== sizeNames.length ||
+      variant.sizeVariants.some((item) =>
+        !sizes.includes(item.size) ||
+        !item.price ||
+        !Number.isFinite(Number(item.price.replace(/[^\d.]/g, ""))) ||
+        Number(item.price.replace(/[^\d.]/g, "")) <= 0 ||
+        !Number.isInteger(item.quantity) ||
+        item.quantity < 0
+      ) ||
+      sizes.some((size) => !sizeNames.includes(size))
+    );
+  });
 }
 
 export async function GET() {
@@ -60,9 +95,9 @@ export async function POST(req: NextRequest) {
       : [];
     const colorVariants = parseColorVariants(body?.colorVariants);
 
-    if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants))) {
+    if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants, sizes))) {
       return NextResponse.json(
-        { error: "Every color needs a name, color, price, and at least one image." },
+        { error: "Each color needs a name, swatch, and photos, plus a valid price and stock quantity for every selected size." },
         { status: 400 }
       );
     }
@@ -75,7 +110,7 @@ export async function POST(req: NextRequest) {
       id: body?.id || crypto.randomUUID(),
       name: String(body?.name || "").trim(),
       category: body?.category || "women",
-      price: String(colorVariants?.[0]?.price || body?.price || "").trim(),
+      price: String(colorVariants?.[0]?.sizeVariants?.[0]?.price || colorVariants?.[0]?.price || body?.price || "").trim(),
       image: primaryImage,
       images: productImages.length ? productImages : primaryImage ? [primaryImage] : [],
       badge: String(body?.badge || "In stock").trim(),
@@ -143,9 +178,9 @@ export async function PUT(req: NextRequest) {
       body?.colorVariants ?? products[index]?.colorVariants
     );
 
-    if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants))) {
+    if (colorVariants && (!colorVariants.length || hasInvalidColorVariant(colorVariants, sizes))) {
       return NextResponse.json(
-        { error: "Every color needs a name, color, price, and at least one image." },
+        { error: "Each color needs a name, swatch, and photos, plus a valid price and stock quantity for every selected size." },
         { status: 400 }
       );
     }
@@ -165,7 +200,7 @@ export async function PUT(req: NextRequest) {
       ...products[index],
       ...body,
       id: productId,
-      price: String(colorVariants?.[0]?.price || body?.price || products[index]?.price || "").trim(),
+      price: String(colorVariants?.[0]?.sizeVariants?.[0]?.price || colorVariants?.[0]?.price || body?.price || products[index]?.price || "").trim(),
       image: primaryImage,
       images: productImages.length ? productImages : primaryImage ? [primaryImage] : [],
       slug:

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendOrderEmail } from "@/utils/sendOrderEmail";
 import { sendOrderWhatsApp } from "@/utils/sendOrderWhatsApp";
-import { saveOrder } from "@/lib/storeData";
+import { OrderValidationError, saveOrder } from "@/lib/storeData";
 
 export const runtime = "nodejs";
 
@@ -44,21 +44,21 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    await saveOrder(order);
+    const savedOrder = await saveOrder(order);
 
     let emailNotification = { customerSent: false, storeSent: false };
     try {
       emailNotification = await sendOrderEmail({
-        customerName,
-        email,
-        phone,
-        address,
-        city,
-        postalCode,
-        country,
-        notes,
-        items,
-        orderTotal: Number(orderTotal || 0),
+        customerName: savedOrder.customerName,
+        email: savedOrder.email,
+        phone: savedOrder.phone,
+        address: savedOrder.address,
+        city: savedOrder.city,
+        postalCode: savedOrder.postalCode,
+        country: savedOrder.country,
+        notes: savedOrder.notes,
+        items: savedOrder.items,
+        orderTotal: savedOrder.orderTotal,
       });
     } catch (emailError) {
       console.warn("Order saved, but email notification failed:", emailError);
@@ -67,16 +67,16 @@ export async function POST(req: NextRequest) {
     let whatsappSent = false;
     try {
       await sendOrderWhatsApp({
-        customerName,
-        email,
-        phone,
-        address,
-        city,
-        postalCode,
-        country,
-        notes,
-        items,
-        orderTotal: Number(orderTotal || 0),
+        customerName: savedOrder.customerName,
+        email: savedOrder.email,
+        phone: savedOrder.phone,
+        address: savedOrder.address,
+        city: savedOrder.city,
+        postalCode: savedOrder.postalCode,
+        country: savedOrder.country,
+        notes: savedOrder.notes,
+        items: savedOrder.items,
+        orderTotal: savedOrder.orderTotal,
       });
       whatsappSent = true;
     } catch (whatsappError) {
@@ -92,15 +92,15 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Order failed:", error);
     return NextResponse.json(
       {
-        error:
-          error?.message ||
-          "Unable to send order right now. Please update your Gmail app password in the environment settings.",
+        error: error instanceof Error
+          ? error.message
+          : "Unable to send order right now. Please update your Gmail app password in the environment settings.",
       },
-      { status: 500 }
+      { status: error instanceof OrderValidationError ? 409 : 500 }
     );
   }
 }
