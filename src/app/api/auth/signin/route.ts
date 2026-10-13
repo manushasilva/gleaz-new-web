@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-import { ensureDefaultAdminUser, getUserByIdentifier } from "@/lib/storeData";
+import { createUserSession, ensureDefaultAdminUser, getUserByIdentifier } from "@/lib/storeData";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,8 +25,17 @@ export async function POST(req: NextRequest) {
     }
 
     const { passwordHash: _passwordHash, ...safeUser } = user;
+    const session = await createUserSession(user.id);
+    const response = NextResponse.json({ user: safeUser, message: "Signed in successfully." });
+    response.cookies.set("gleaz-session", session.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      expires: new Date(session.expiresAt),
+    });
 
-    return NextResponse.json({ user: safeUser, message: "Signed in successfully." });
+    return response;
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Unable to sign in right now." },

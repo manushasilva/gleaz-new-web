@@ -24,15 +24,21 @@ export default function AdminNav({ productCount }: { productCount: number }) {
     }
   }, []);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     try {
-      localStorage.removeItem("gleaz-user");
-    } catch (e) {}
-    // notify other components in same tab to update auth state
-    try {
+      const response = await fetch("/api/auth/signout", { method: "POST" });
+      if (!response.ok) throw new Error("Unable to revoke the sign-in session.");
+    } catch (error) {
+      console.error("Unable to revoke the sign-in session:", error);
+    } finally {
+      try {
+        localStorage.removeItem("gleaz-user");
+      } catch (error) {
+        console.error("Unable to clear the saved user:", error);
+      }
       window.dispatchEvent(new Event("gleaz-user-changed"));
-    } catch (e) {}
-    router.push("/");
+      router.push("/");
+    }
   };
 
   return (

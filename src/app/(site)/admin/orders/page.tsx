@@ -26,13 +26,17 @@ type Order = {
   items: OrderItem[];
   orderTotal: number;
   createdAt: string;
+  status?: "pending" | "confirmed" | "cancelled";
 };
+
+type OrderStatus = NonNullable<Order["status"]>;
 
 export default function AdminOrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Order | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -50,12 +54,49 @@ export default function AdminOrdersPage() {
       setLoading(true);
       const res = await fetch("/api/admin/orders");
       const data = await res.json();
+      if (res.status === 403) {
+        toast.error("Please sign in again to access orders.");
+        localStorage.removeItem("gleaz-user");
+        router.replace("/signin");
+        return;
+      }
       if (!res.ok) throw new Error(data?.error || "Unable to load orders.");
       setOrders(data.orders || []);
     } catch (err: any) {
       toast.error(err?.message || "Unable to load orders.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const changeOrderStatus = async (status: OrderStatus) => {
+    if (!selected || updatingStatus) return;
+
+    try {
+      setUpdatingStatus(true);
+      const response = await fetch("/api/admin/orders", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderId: selected.id, status }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || "Unable to update order status.");
+
+      setOrders((current) =>
+        current.map((order) => (order.id === result.order.id ? result.order : order))
+      );
+      setSelected(result.order);
+      if (result.notificationSent) {
+        toast.success(`Order ${status} and customer notified.`);
+      } else {
+        toast.error(`Order ${status}, but customer was not notified: ${result.notificationError}`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to update order status.");
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -98,6 +139,7 @@ export default function AdminOrdersPage() {
                           <div className="text-lg font-semibold text-[#111111]">{o.customerName}</div>
                           <div className="mt-1 text-sm text-[#6a6a6a]">{o.email} • {new Date(o.createdAt).toLocaleString()}</div>
                           <div className="mt-2 text-base font-bold text-[#111111]">Total: ${o.orderTotal.toFixed(2)}</div>
+                          <span className="mt-2 inline-block rounded-full bg-[#f3f1ee] px-3 py-1 text-xs font-semibold capitalize text-[#5a5148]">{o.status || "pending"}</span>
                         </div>
 
                         <div className="flex gap-2">
@@ -116,6 +158,7 @@ export default function AdminOrdersPage() {
           {selected ? (
             <div>
               <h2 className="text-xl font-bold">Order: {selected.id}</h2>
+              <p className="mt-2"><strong>Status:</strong> <span className="capitalize">{selected.status || "pending"}</span></p>
               <p className="mt-2"><strong>Customer:</strong> {selected.customerName}</p>
               <p><strong>Email:</strong> {selected.email}</p>
               <p><strong>Phone:</strong> {selected.phone}</p>
@@ -136,6 +179,26 @@ export default function AdminOrdersPage() {
                   ))}
                 </div>
               </div>
+              {selected.status !== "cancelled" && (
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {(selected.status || "pending") === "pending" && (
+                    <button
+                      onClick={() => changeOrderStatus("confirmed")}
+                      disabled={updatingStatus}
+                      className="rounded bg-[#111111] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      {updatingStatus ? "Updating..." : "Confirm order"}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => changeOrderStatus("cancelled")}
+                    disabled={updatingStatus}
+                    className="rounded border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 disabled:opacity-50"
+                  >
+                    {updatingStatus ? "Updating..." : "Cancel order"}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center text-sm text-[#6a6a6a]">Select an order to view details.</div>

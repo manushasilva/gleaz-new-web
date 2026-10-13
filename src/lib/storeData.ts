@@ -16,6 +16,12 @@ export type StoreUser = {
   createdAt: string;
 };
 
+export type StoreSession = {
+  token: string;
+  userId: string;
+  expiresAt: string;
+};
+
 export type StoreProduct = {
   id: string;
   name: string;
@@ -47,6 +53,8 @@ export type StoreVoucher = {
 
 export type StoreOrder = {
   id: string;
+  status?: "pending" | "confirmed" | "cancelled";
+  statusUpdatedAt?: string;
   customerName: string;
   email: string;
   phone: string;
@@ -80,6 +88,7 @@ export type FooterSettings = {
 
 export type StoreData = {
   users: StoreUser[];
+  sessions: StoreSession[];
   products: StoreProduct[];
   vouchers: StoreVoucher[];
   orders: StoreOrder[];
@@ -177,6 +186,7 @@ const defaultLandingSettings: LandingSettings = {
 
 const defaultData: StoreData = {
   users: [],
+  sessions: [],
   products: defaultProducts,
   vouchers: [],
   orders: [],
@@ -194,6 +204,7 @@ const inMemoryStore: { current?: StoreData } = {};
 function normalizeStore(parsed: Partial<StoreData> | null | undefined): StoreData {
   return {
     users: Array.isArray(parsed?.users) ? parsed.users : [],
+    sessions: Array.isArray(parsed?.sessions) ? parsed.sessions : [],
     // Preserve an explicit empty products array so deleted products stay deleted.
     products: Array.isArray(parsed?.products) ? parsed.products : defaultProducts,
     vouchers: Array.isArray(parsed?.vouchers) ? parsed.vouchers : [],
@@ -450,6 +461,36 @@ export async function getUserByEmail(email: string) {
   return store.users.find((user) => user.email.toLowerCase() === email.toLowerCase()) ?? null;
 }
 
+export async function createUserSession(userId: string) {
+  const store = await readStore();
+  const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+  const session = {
+    token: crypto.randomUUID(),
+    userId,
+    expiresAt,
+  };
+
+  store.sessions = store.sessions.filter((item) => new Date(item.expiresAt).getTime() > Date.now());
+  store.sessions.push(session);
+  await writeStore(store);
+  return session;
+}
+
+export async function getUserForSession(token: string) {
+  const store = await readStore();
+  const session = store.sessions.find(
+    (item) => item.token === token && new Date(item.expiresAt).getTime() > Date.now()
+  );
+
+  return session ? store.users.find((user) => user.id === session.userId) ?? null : null;
+}
+
+export async function deleteUserSession(token: string) {
+  const store = await readStore();
+  store.sessions = store.sessions.filter((session) => session.token !== token);
+  await writeStore(store);
+}
+
 export async function getUserById(id: string) {
   const store = await readStore();
   return store.users.find((user) => user.id === id) ?? null;
@@ -494,7 +535,23 @@ export async function getUserByIdentifier(identifier: string) {
 
 export async function saveOrder(order: StoreOrder) {
   const store = await readStore();
-  store.orders.unshift(order);
+  const savedOrder = { ...order, status: order.status || "pending" };
+  store.orders.unshift(savedOrder);
+  await writeStore(store);
+  return savedOrder;
+}
+
+export async function updateOrderStatus(
+  orderId: string,
+  status: NonNullable<StoreOrder["status"]>
+) {
+  const store = await readStore();
+  const order = store.orders.find((item) => item.id === orderId);
+
+  if (!order) return null;
+
+  order.status = status;
+  order.statusUpdatedAt = new Date().toISOString();
   await writeStore(store);
   return order;
 }

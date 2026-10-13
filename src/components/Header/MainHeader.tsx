@@ -153,14 +153,23 @@ const MainHeader = ({ headerData }: IProps) => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           setAccountMenuOpen(false);
-                          localStorage.removeItem("gleaz-user");
                           try {
-                            window.dispatchEvent(new Event("gleaz-user-changed"));
-                          } catch (e) {}
-                          setUserName("");
-                          router.push("/");
+                            const response = await fetch("/api/auth/signout", { method: "POST" });
+                            if (!response.ok) throw new Error("Unable to revoke the sign-in session.");
+                          } catch (error) {
+                            console.error("Unable to revoke the sign-in session:", error);
+                          } finally {
+                            try {
+                              localStorage.removeItem("gleaz-user");
+                              window.dispatchEvent(new Event("gleaz-user-changed"));
+                            } catch (error) {
+                              console.error("Unable to clear the saved user:", error);
+                            }
+                            setUserName("");
+                            router.push("/");
+                          }
                         }}
                         className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#111111] hover:bg-[#f7f6f4]"
                       >
