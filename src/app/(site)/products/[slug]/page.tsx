@@ -600,7 +600,7 @@ export default function ProductDetailPage() {
             <div className="mb-3 text-sm font-medium uppercase tracking-[0.12em] text-[#111111]">
               Select item code{activeColorVariant ? `: ${getProductVariantItemCode(activeColorVariant)}` : ""}
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               {availableColorVariants.map((variant, idx) => (
                 <button
                   key={`${getProductVariantItemCode(variant)}-${idx}`}
@@ -613,13 +613,21 @@ export default function ProductDetailPage() {
                     setQuantity(1);
                   }}
                   aria-pressed={selectedItemCode === getProductVariantItemCode(variant)}
-                  className={`rounded-md border px-4 py-2 text-sm font-medium transition ${
+                  className={`h-[76px] w-[76px] overflow-hidden border bg-white p-1 transition ${
                     selectedItemCode === getProductVariantItemCode(variant)
-                      ? "border-[#111111] bg-[#111111] text-white"
-                      : "border-[#d7d4d0] bg-white text-[#111111] hover:border-[#111111]"
+                      ? "border-[#111111] ring-1 ring-[#111111]"
+                      : "border-[#d7d4d0] hover:border-[#111111]"
                   }`}
                 >
-                  {getProductVariantItemCode(variant)}
+                  {variant.images?.[0] || product.image ? (
+                    <img
+                      src={variant.images?.[0] || product.image}
+                      alt={`${getProductVariantItemCode(variant)} main image`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span aria-hidden="true" className="block h-full w-full" style={{ backgroundColor: variant.color }} />
+                  )}
                 </button>
               ))}
             </div>
