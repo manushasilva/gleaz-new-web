@@ -36,6 +36,17 @@ const fallbackDetails = [
 const findSizeVariant = (variant: ProductColorVariant | undefined, size: string) =>
   variant?.sizeVariants?.find((item) => item.size.toLowerCase() === size.toLowerCase());
 
+const standardSizeOrder = ["XS", "S", "M", "L", "XL", "XXL"];
+const sortSizes = (sizes: string[]) =>
+  [...sizes].sort((a, b) => {
+    const aIndex = standardSizeOrder.indexOf(a.toUpperCase());
+    const bIndex = standardSizeOrder.indexOf(b.toUpperCase());
+    if (aIndex === -1 && bIndex === -1) return 0;
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+    return aIndex - bIndex;
+  });
+
 const shoppingBenefits = [
   { title: "Free Shipping", detail: "On orders over LKR 4,500" },
   { title: "Easy Returns", detail: "14-day hassle-free return policy" },
@@ -123,10 +134,10 @@ export default function ProductDetailPage() {
   }, [product]);
   const availableSizes = useMemo(() => {
     if (!product?.sizes?.length) return [];
-    return product.sizes.filter((size) => colorVariants.some((variant) => {
+    return sortSizes(product.sizes.filter((size) => colorVariants.some((variant) => {
       if (!variant.sizeVariants) return product.quantity === undefined || product.quantity > 0;
       return Number(findSizeVariant(variant, size)?.quantity || 0) > 0;
-    }));
+    })));
   }, [product?.sizes, product?.quantity, colorVariants]);
   const availableColorVariants = selectedSize
     ? colorVariants.filter((variant) => {
@@ -562,7 +573,7 @@ export default function ProductDetailPage() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-3">
-                {product.sizes.map((size) => (
+                {sortSizes(product.sizes).map((size) => (
                   <button
                     key={size}
                     type="button"
@@ -598,6 +609,7 @@ export default function ProductDetailPage() {
                   title={getProductVariantItemCode(variant)}
                   onClick={() => {
                     setSelectedItemCode(getProductVariantItemCode(variant));
+                    setSelectedGalleryImage(variant.images?.[0] || product.image);
                     setQuantity(1);
                   }}
                   aria-pressed={selectedItemCode === getProductVariantItemCode(variant)}
