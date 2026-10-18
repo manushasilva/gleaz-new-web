@@ -87,7 +87,10 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [deliveryEstimate, setDeliveryEstimate] = useState("");
+  const [reviews, setReviews] = useState<Array<{ id: string; rating: number; comment: string | null; createdAt?: string | Date; }>>([]);
   const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0 });
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const safeSlug = useMemo(() => {
     const slugValue = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
@@ -157,6 +160,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (!product?.slug) {
+      setReviews([]);
       setReviewSummary({ average: 0, count: 0 });
       return;
     }
@@ -172,17 +176,21 @@ export default function ProductDetailPage() {
         });
         if (!response.ok) throw new Error("Unable to load reviews.");
         const result = await response.json();
-        const reviews = Array.isArray(result.review) ? result.review : [];
-        const ratings = reviews
+        const reviewList = Array.isArray(result.review) ? result.review : [];
+        const ratings = reviewList
           .map((review: { rating?: unknown }) => Number(review.rating))
           .filter((rating: number) => Number.isFinite(rating) && rating >= 1 && rating <= 5);
 
+        setReviews(reviewList);
         setReviewSummary({
           average: ratings.length ? ratings.reduce((total: number, rating: number) => total + rating, 0) / ratings.length : 0,
           count: ratings.length,
         });
       } catch (error) {
-        if (!controller.signal.aborted) setReviewSummary({ average: 0, count: 0 });
+        if (!controller.signal.aborted) {
+          setReviews([]);
+          setReviewSummary({ average: 0, count: 0 });
+        }
       }
     };
 
@@ -423,6 +431,62 @@ export default function ProductDetailPage() {
   const cartLineTotal = currentUnitPrice * quantity;
   const shippingProgress = Math.min((cartLineTotal / shippingThreshold) * 100, 100);
   const amountUntilFreeShipping = Math.max(shippingThreshold - cartLineTotal, 0);
+  const reviewDistribution = Array.from({ length: 5 }, (_, index) => {
+    const star = 5 - index;
+    const count = reviews.filter((review) => Number(review.rating) === star).length;
+    return {
+      star,
+      count,
+      percent: reviewSummary.count ? (count / reviewSummary.count) * 100 : 0,
+    };
+  });
+
+  const handleReviewSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!product || !reviewForm.comment.trim()) {
+      toast.error("Please add a short review before submitting.");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+
+    try {
+      const response = await fetch("/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          productSlug: product.slug,
+          rating: reviewForm.rating,
+          comment: reviewForm.comment.trim(),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.error || "Unable to submit review.");
+      }
+
+      const nextReviews = Array.isArray(result.review) ? result.review : [result.review].filter(Boolean);
+      const nextRatings = nextReviews
+        .map((review: { rating?: unknown }) => Number(review.rating))
+        .filter((rating: number) => Number.isFinite(rating) && rating >= 1 && rating <= 5);
+
+      setReviews(nextReviews);
+      setReviewSummary({
+        average: nextRatings.length ? nextRatings.reduce((total: number, rating: number) => total + rating, 0) / nextRatings.length : 0,
+        count: nextRatings.length,
+      });
+      setReviewForm({ rating: 5, comment: "" });
+      toast.success("Thanks! Your review has been submitted and is awaiting approval.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to submit review.");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   return (
     <main className="mx-auto max-w-[1500px] px-4 pb-28 pt-28 sm:px-6 lg:pb-16 lg:px-8">
@@ -721,6 +785,135 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      <section className="mt-12 rounded-[22px] border border-[#e5e1dc] bg-[#f8f6f3] p-4 sm:p-5 lg:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a6a6a]">Customer love</div>
+            <h2 className="mt-2 text-2xl font-medium text-[#111111]">What shoppers are saying</h2>
+          </div>
+          <div className="flex items-center gap-2 rounded-full border border-[#e1ddd6] bg-white px-3 py-2 text-sm text-[#111111] shadow-sm">
+            <span className="text-base text-amber-500">★</span>
+            <span className="font-semibold">{reviewSummary.count ? reviewSummary.average.toFixed(1) : "0.0"}</span>
+            <span className="text-[#6b6966]">({reviewSummary.count} review{reviewSummary.count === 1 ? "" : "s"})</span>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-[18px] border border-[#e3dfd9] bg-white p-4 shadow-sm">
+            <div className="flex items-end gap-2">
+              <span className="text-4xl font-semibold text-[#111111]">{reviewSummary.count ? reviewSummary.average.toFixed(1) : "0.0"}</span>
+              <span className="pb-1 text-xs text-[#6b6966]">/ 5.0</span>
+            </div>
+            <div className="mt-2 flex items-center gap-1 text-lg text-amber-500" aria-label="Average rating">
+              {Array.from({ length: 5 }, (_, index) => (
+                <span key={index}>{index < Math.round(reviewSummary.average || 0) ? "★" : "☆"}</span>
+              ))}
+            </div>
+            <div className="mt-5 space-y-2.5">
+              {reviewDistribution.map((item) => (
+                <div key={item.star} className="grid grid-cols-[28px_1fr_26px] items-center gap-2 text-xs text-[#353432]">
+                  <span>{item.star}★</span>
+                  <div className="h-2 overflow-hidden rounded-full bg-[#efeae4]">
+                    <div className="h-full rounded-full bg-[#111111]" style={{ width: `${item.percent}%` }} />
+                  </div>
+                  <span className="text-right text-[#6b6966]">{item.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[18px] border border-[#e3dfd9] bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-[#111111]">Recent reviews</h3>
+              <span className="rounded-full bg-[#f3f0ed] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[#6b6966]">
+                {reviews.length}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {reviews.length > 0 ? (
+                reviews.slice(0, 3).map((review) => (
+                  <article key={review.id} className="rounded-[14px] border border-[#eee9e3] bg-[#faf9f7] p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#111111] text-xs font-semibold text-white">
+                          {String(review.comment ?? "C").trim().charAt(0).toUpperCase() || "C"}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[#111111]">Verified customer</p>
+                          <p className="text-[11px] text-[#6b6966]">
+                            {review.createdAt ? new Date(review.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "Recently"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-0.5 text-sm text-amber-500" aria-label={`${review.rating} star review`}>
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <span key={`${review.id}-${index}`}>{index < Number(review.rating) ? "★" : "☆"}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-[#4d4d4d]">“{review.comment || "Great product and great fit."}”</p>
+                  </article>
+                ))
+              ) : (
+                <div className="rounded-[14px] border border-dashed border-[#d9d4cf] bg-[#f5f3f0] p-4 text-sm text-[#6b6966]">
+                  No customer reviews yet. Be the first to share your feedback.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleReviewSubmit} className="mt-6 rounded-[18px] border border-[#e3dfd9] bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a6a6a]">Share your experience</div>
+              <h3 className="mt-1 text-xl font-medium text-[#111111]">Write a customer review</h3>
+            </div>
+            <div className="flex items-center gap-1 rounded-full border border-[#ede8e3] bg-[#faf7f5] px-2 py-1.5">
+              {Array.from({ length: 5 }, (_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => setReviewForm((current) => ({ ...current, rating: index + 1 }))}
+                  className={`text-xl transition ${index < reviewForm.rating ? "text-amber-500" : "text-[#d9d2ca]"}`}
+                  aria-label={`Set rating to ${index + 1}`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label htmlFor="customer-review" className="mb-2 block text-[10px] font-medium uppercase tracking-[0.12em] text-[#111111]">
+              Your review
+            </label>
+            <textarea
+              id="customer-review"
+              value={reviewForm.comment}
+              onChange={(event) => setReviewForm((current) => ({ ...current, comment: event.target.value }))}
+              rows={4}
+              placeholder="Tell other shoppers what you loved about this product..."
+              className="w-full rounded-[14px] border border-[#ddd7d1] bg-[#f9f7f5] px-3 py-2.5 text-sm text-[#111111] outline-none transition focus:border-[#111111] focus:ring-2 focus:ring-[#111111]/10"
+            />
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-[#6b6966]">
+              Reviews are checked before approval.
+            </p>
+            <button
+              type="submit"
+              disabled={isSubmittingReview || !reviewForm.comment.trim()}
+              className="inline-flex items-center justify-center rounded bg-[#111111] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-[#262626] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSubmittingReview ? "Submitting..." : "Submit review"}
+            </button>
+          </div>
+        </form>
+      </section>
 
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-[#e5e1dc] bg-white/95 p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
         <div className="min-w-0 flex-1">
