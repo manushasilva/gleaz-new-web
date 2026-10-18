@@ -109,9 +109,13 @@ const MainHeader = ({ headerData }: IProps) => {
     <>
       <header className="fixed left-0 top-0 z-50 w-full bg-white text-[#111111] shadow-sm">
           <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:gap-4 lg:px-8">
-          <div className="text-[1.7rem] font-black uppercase tracking-[-0.08em] text-[#111111] sm:text-[2.1rem] lg:text-[2.3rem]">
+          <Link
+            href="/"
+            aria-label="GLEAZ home"
+            className="font-display text-[1.7rem] font-extrabold uppercase tracking-[-0.08em] text-[#111111] sm:text-[2.1rem] lg:text-[2.3rem]"
+          >
             GLEAZ
-          </div>
+          </Link>
 
           <div className="hidden flex-1 items-center justify-center xl:flex">
             <DesktopMenu menuData={menuData} stickyMenu={stickyMenu} />

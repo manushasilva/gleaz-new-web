@@ -46,11 +46,11 @@ const emptyForm = {
 };
 
 const emptyLandingForm = {
-  heroTitle: "The Cotton",
-  heroSubtitle: "MUSE",
+  heroTitle: "Redefining Everyday Style",
+  heroSubtitle: "Discover your fit at gleaz.lk.",
   heroImage:
     "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1600&q=80",
-  heroBadge: "New Edit",
+  heroBadge: "New arrivals at GLEAZ",
   ctaText: "Shop now",
   ctaLink: "/shop-with-sidebar?category=women",
   womenSectionTitle: "Women",
@@ -816,7 +816,7 @@ export default function AdminPage() {
                   value={landingForm.heroTitle}
                   onChange={(e) => setLandingForm({ ...landingForm, heroTitle: e.target.value })}
                   className="w-full rounded-md border border-[#d7d4cf] px-3 py-2.5 outline-none focus:border-[#111111]"
-                  placeholder="The Cotton"
+                  placeholder="Redefining Everyday Style"
                 />
               </div>
 
@@ -826,7 +826,7 @@ export default function AdminPage() {
                   value={landingForm.heroSubtitle}
                   onChange={(e) => setLandingForm({ ...landingForm, heroSubtitle: e.target.value })}
                   className="w-full rounded-md border border-[#d7d4cf] px-3 py-2.5 outline-none focus:border-[#111111]"
-                  placeholder="MUSE"
+                  placeholder="Discover your fit at gleaz.lk."
                 />
               </div>
 

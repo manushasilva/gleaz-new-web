@@ -38,15 +38,18 @@ const Home = async () => {
           <div className="absolute inset-0 flex items-center justify-start px-6 py-9 sm:px-[12%] lg:px-[40%]">
             <div className="w-full max-w-sm text-left text-[#111111]">
               {landing.heroBadge && (
-                <div className="mb-4 inline-flex rounded-full border border-black/25 bg-white/55 px-4 py-2 text-xs font-semibold text-[#111111] backdrop-blur-sm sm:mb-6 sm:text-sm">
+                <div className="mb-4 inline-flex rounded-full border border-black/25 bg-white/55 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#111111] backdrop-blur-sm sm:mb-6 sm:text-sm">
                   {landing.heroBadge}
                 </div>
               )}
 
-              <h1 className="max-w-[9ch] text-4xl font-medium leading-[1.02] tracking-normal sm:text-5xl lg:text-[3.5rem]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                {landing.heroTitle || "Be Better Everyday"}
+              <p className="mb-3 font-display text-sm font-extrabold uppercase tracking-[0.28em] sm:text-base">
+                GLEAZ
+              </p>
+              <h1 className="max-w-[14ch] font-display text-4xl font-semibold leading-[1.02] tracking-[-0.04em] sm:text-5xl lg:text-[3.5rem]">
+                {landing.heroTitle || "Redefining Everyday Style"}
               </h1>
-              <p className="mt-3 max-w-xs text-sm leading-6 text-black/75 sm:text-base">{landing.heroSubtitle || "Comfort-first style for wherever the day takes you."}</p>
+              <p className="mt-3 max-w-xs text-sm leading-6 text-black/75 sm:text-base">{landing.heroSubtitle || "Discover your fit at gleaz.lk."}</p>
 
               <div className="mt-5 flex flex-wrap justify-start gap-2.5 sm:mt-6">
                 <Link href="/shop-with-sidebar?category=men" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[2px] bg-[#817767] px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#6f6659] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#817767]">Shop men <span aria-hidden="true">→</span></Link>

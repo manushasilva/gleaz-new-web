@@ -174,11 +174,11 @@ function getSupabaseStoreClient() {
 }
 
 const defaultLandingSettings: LandingSettings = {
-  heroTitle: "The Cotton",
-  heroSubtitle: "MUSE",
+  heroTitle: "Redefining Everyday Style",
+  heroSubtitle: "Discover your fit at gleaz.lk.",
   heroImage:
     "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1600&q=80",
-  heroBadge: "New Edit",
+  heroBadge: "New arrivals at GLEAZ",
   ctaText: "Shop now",
   ctaLink: "/shop-with-sidebar?category=women",
   womenSectionTitle: "Women",

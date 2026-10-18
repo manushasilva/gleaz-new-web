@@ -2,19 +2,13 @@ import "./css/style.css";
 import { Metadata } from "next";
 import { getSeoSettings } from "@/get-api-data/seo-setting";
 import { GoogleTagManager } from '@next/third-parties/google';
-import { DM_Sans, Pacifico, Montserrat } from 'next/font/google'
+import { DM_Sans, Montserrat } from 'next/font/google'
 
 const siteUrl = "https://gleaz.io";
 
 const dm_sans = DM_Sans({
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
   variable: "--font-body",
-  subsets: ['latin'],
-})
-
-const pacifico = Pacifico({
-  weight: '400',
-  variable: '--font-hero',
   subsets: ['latin'],
 })
 
@@ -28,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const seoSettings = await getSeoSettings();
   return {
     metadataBase: new URL(siteUrl),
-    title: "Gleaz Fashion",
+    title: "GLEAZ | Modern Fashion, Elevated",
     description: seoSettings?.metadescription || "GLEAZ is a modern clothing brand offering elevated everyday essentials and premium fashion essentials.",
     keywords: seoSettings?.metaKeywords || "GLEAZ, clothing, fashion, boutique, modern apparel",
     openGraph: {
@@ -51,7 +45,7 @@ export default async function RootLayout({
   const seoSettings = await getSeoSettings();
   return (
     <html lang="en">
-      <body suppressHydrationWarning={true} className={`${dm_sans.variable} ${pacifico.variable} ${montserrat.variable}`}>
+      <body suppressHydrationWarning={true} className={`${dm_sans.variable} ${montserrat.variable}`}>
         {children}
         {seoSettings?.gtmId && <GoogleTagManager gtmId={seoSettings.gtmId} />}
       </body>
