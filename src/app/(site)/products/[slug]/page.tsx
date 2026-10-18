@@ -91,6 +91,7 @@ export default function ProductDetailPage() {
   const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0 });
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
 
   const safeSlug = useMemo(() => {
     const slugValue = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
@@ -236,6 +237,13 @@ export default function ProductDetailPage() {
     ).filter(Boolean)
   ));
   const isInWishlist = Boolean(product && wishlistItems.some((item) => item.id === product.id));
+
+  const handleZoomMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+    const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+    setMousePosition({ x, y });
+  };
 
   const handleWishlistToggle = () => {
     if (!product) return;
@@ -509,11 +517,20 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="overflow-hidden rounded-[12px] border border-[#e2dfda] bg-[#f4f0eb] p-3">
-              <img
-                src={selectedGalleryImage || gallery[0] || product.image}
-                alt={product.name}
-                className="h-[620px] w-full object-cover"
-              />
+              <div
+                className="group relative h-[620px] overflow-hidden rounded-[8px] bg-[#f4f0eb]"
+                onMouseMove={handleZoomMouseMove}
+                onMouseLeave={() => setMousePosition({ x: 50, y: 50 })}
+              >
+                <img
+                  src={selectedGalleryImage || gallery[0] || product.image}
+                  alt={product.name}
+                  className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.35] group-hover:cursor-zoom-in"
+                  style={{
+                    transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
+                  }}
+                />
+              </div>
             </div>
           </div>
 
@@ -752,18 +769,6 @@ export default function ProductDetailPage() {
             Buy now
           </button>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            {shoppingBenefits.map((benefit) => (
-              <div key={benefit.title} className="rounded-[12px] border border-[#e5e1dc] bg-[#f8f6f3] p-3">
-                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#111111] text-xs font-bold text-white">
-                  ✓
-                </div>
-                <div className="text-sm font-semibold text-[#111111]">{benefit.title}</div>
-                <div className="mt-1 text-xs leading-5 text-[#5e5c59]">{benefit.detail}</div>
-              </div>
-            ))}
-          </div>
-
           <div className="mt-8 space-y-3 rounded-[12px] border border-[#e5e1dc] bg-[#faf9f7] p-4">
             {fallbackDetails.map((detail) => (
               <div key={detail.label} className="flex items-center justify-between gap-4 border-b border-[#ece7e1] pb-2 last:border-b-0 last:pb-0">
@@ -771,6 +776,67 @@ export default function ProductDetailPage() {
                 <span className="text-sm text-[#111111]">{detail.label === "Delivery" && deliveryEstimate ? deliveryEstimate : detail.value}</span>
               </div>
             ))}
+          </div>
+
+          <div className="mt-8 rounded-[18px] border border-[#e5e1dc] bg-[#f7f5f2] p-4">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a6a6a]">Product highlights</div>
+            <ul className="mt-4 space-y-3 text-sm text-[#4d4d4d]">
+              {[
+                "Lightweight fabric",
+                "Relaxed fit",
+                "Breathable comfort",
+                "Machine washable",
+                "Everyday style",
+              ].map((feature) => (
+                <li key={feature} className="flex items-center gap-3">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#111111] text-[10px] font-bold text-white">✓</span>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mt-8 rounded-[18px] border border-[#e5e1dc] bg-white p-4">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a6a6a]">Premium assurance</div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {[
+                { title: "Quality checked", detail: "Every order is carefully reviewed before it leaves our warehouse." },
+                { title: "Secure checkout", detail: "Shop with confidence using protected payments and trusted processing." },
+                { title: "Premium materials", detail: "Thoughtfully sourced essentials chosen for lasting comfort and style." },
+                { title: "Customer-first support", detail: "Friendly guidance before, during, and after your purchase." },
+              ].map((item) => (
+                <div key={item.title} className="rounded-[14px] border border-[#eee9e3] bg-[#f9f7f5] p-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#111111] text-xs font-bold text-white">✓</div>
+                  <div className="mt-3 text-sm font-semibold text-[#111111]">{item.title}</div>
+                  <div className="mt-1 text-xs leading-5 text-[#5e5c59]">{item.detail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-8 rounded-[22px] border border-[#e5e1dc] bg-[#f5f1ec] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a6a6a]">Our promise</div>
+                <h3 className="mt-2 text-xl font-medium text-[#111111]">Crafted for confidence</h3>
+              </div>
+              <div className="rounded-full border border-[#d9d1ca] bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#111111]">
+                Since 2024
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {[
+                { title: "Curated essentials", detail: "Thoughtful pieces chosen for everyday wear." },
+                { title: "Thoughtful service", detail: "Support that feels personal, quick, and reliable." },
+                { title: "Lasting value", detail: "Modern pieces designed to feel premium and practical." },
+              ].map((item) => (
+                <div key={item.title} className="rounded-[16px] border border-[#e2dbd4] bg-white p-3">
+                  <div className="text-sm font-semibold text-[#111111]">{item.title}</div>
+                  <div className="mt-2 text-xs leading-5 text-[#5e5c59]">{item.detail}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-5 border-t border-[#e5e1dc] pt-6 text-sm uppercase tracking-[0.1em] text-[#111111]">
@@ -810,6 +876,7 @@ export default function ProductDetailPage() {
                 <span key={index}>{index < Math.round(reviewSummary.average || 0) ? "★" : "☆"}</span>
               ))}
             </div>
+
             <div className="mt-5 space-y-2.5">
               {reviewDistribution.map((item) => (
                 <div key={item.star} className="grid grid-cols-[28px_1fr_26px] items-center gap-2 text-xs text-[#353432]">
@@ -820,6 +887,22 @@ export default function ProductDetailPage() {
                   <span className="text-right text-[#6b6966]">{item.count}</span>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-5 rounded-[14px] border border-[#efeae4] bg-[#faf8f6] p-3">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6a6a6a]">Most-loved feedback</div>
+              <div className="mt-3 space-y-2 text-sm text-[#4d4d4d]">
+                {[
+                  "Fits perfectly.",
+                  "Great quality and comfort.",
+                  "Modern style that feels premium.",
+                ].map((highlight) => (
+                  <div key={highlight} className="flex items-center gap-2">
+                    <span className="text-amber-500">★</span>
+                    <span>{highlight}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
