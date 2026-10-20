@@ -71,13 +71,6 @@ const Home = async () => {
         <HomeProductCarousel title="Last chance · Sale picks" products={saleProducts} />
       )}
 
-      <a
-        href="#top"
-        aria-label="Back to top"
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl text-[#111111] shadow-[0_10px_30px_rgba(17,17,17,0.12)]"
-      >
-        ↑
-      </a>
     </main>
   );
 };
