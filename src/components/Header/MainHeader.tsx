@@ -114,9 +114,16 @@ const MainHeader = ({ headerData }: IProps) => {
           <Link
             href="/"
             aria-label="GLEAZ home"
-            className="font-display text-[1.7rem] font-extrabold uppercase tracking-[-0.08em] text-[#111111] sm:text-[2.1rem] lg:text-[2.3rem]"
+            className="flex shrink-0 items-center"
           >
-            GLEAZ
+            <Image
+              src="/images/logo/gleaz-wordmark.png"
+              alt="GLEAZ"
+              width={424}
+              height={121}
+              priority
+              className="h-[34px] w-[119px] object-contain sm:h-[40px] sm:w-[140px]"
+            />
           </Link>
 
           <div className="hidden flex-1 items-center justify-center xl:flex">
