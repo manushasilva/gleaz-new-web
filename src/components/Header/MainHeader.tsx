@@ -284,7 +284,6 @@ const MainHeader = ({ headerData }: IProps) => {
                 </button>
               </div>
             </div>
-          </div>
         </div>
       )}
 
