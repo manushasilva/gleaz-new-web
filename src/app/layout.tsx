@@ -30,9 +30,12 @@ export async function generateMetadata(): Promise<Metadata> {
       images: seoSettings?.metaImage ? [seoSettings.metaImage] : [],
     },
     icons: {
-      icon: "/favicon.svg",
-      shortcut: "/favicon.svg",
-      apple: "/favicon.ico",
+      icon: [
+        { url: "/favicon.ico", type: "image/x-icon" },
+        { url: "/favicon.png", type: "image/png", sizes: "96x96" },
+      ],
+      shortcut: "/favicon.ico",
+      apple: "/apple-icon.png",
     },
   };
 }
