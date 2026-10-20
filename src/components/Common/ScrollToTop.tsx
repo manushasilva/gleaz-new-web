@@ -1,5 +1,4 @@
 "use client";
-import { ChevronUpIcon } from "@/assets/icons";
 import { useEffect, useState } from "react";
 
 export default function ScrollToTop() {
@@ -34,11 +33,25 @@ export default function ScrollToTop() {
       {isVisible && (
         <button
           onClick={scrollToTop}
-          className={`items-center justify-center w-10 h-10 rounded-lg shadow-lg bg-blue ease-out duration-200 hover:bg-blue-dark fixed bottom-8 right-8 z-999 ${
-            isVisible ? "flex" : "hidden"
-          }`}
+          aria-label="Scroll to top"
+          className="fixed bottom-8 right-8 z-999 flex h-11 w-11 items-center justify-center rounded-full border border-[#e7e5e2] bg-white text-[#111111] shadow-md transition-colors duration-200 hover:bg-[#f7f6f4]"
         >
-          <ChevronUpIcon className="fill-white size-5" />
+          <svg
+            aria-hidden="true"
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M10 16V4M4.5 9.5L10 4L15.5 9.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       )}
     </>
