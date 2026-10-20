@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useCart } from "@/hooks/useCart";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
@@ -82,6 +82,7 @@ export default function ProductDetailPage() {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [selectedItemCode, setSelectedItemCode] = useState<string>("");
   const [selectedGalleryImage, setSelectedGalleryImage] = useState("");
+  const mobileGalleryRef = useRef<HTMLDivElement>(null);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -230,13 +231,33 @@ export default function ProductDetailPage() {
     return `LKR ${new Intl.NumberFormat("en-LK").format(numericValue)}`;
   };
 
-  const gallery = Array.from(new Set(
-    (activeColorVariant?.images?.length
-      ? activeColorVariant.images
-      : product?.images?.length ? product.images : product?.image ? [product.image] : []
-    ).filter(Boolean)
-  ));
+  const gallery = useMemo(
+    () => Array.from(new Set(
+      (activeColorVariant?.images?.length
+        ? activeColorVariant.images
+        : product?.images?.length ? product.images : product?.image ? [product.image] : []
+      ).filter(Boolean)
+    )),
+    [activeColorVariant?.images, product?.images, product?.image],
+  );
+  const selectedGalleryIndex = Math.max(gallery.indexOf(selectedGalleryImage), 0);
   const isInWishlist = Boolean(product && wishlistItems.some((item) => item.id === product.id));
+
+  useEffect(() => {
+    const slider = mobileGalleryRef.current;
+    if (!slider || !gallery.length) return;
+    slider.scrollTo({ left: selectedGalleryIndex * slider.clientWidth });
+  }, [gallery, selectedGalleryIndex]);
+
+  const handleMobileGalleryScroll = () => {
+    const slider = mobileGalleryRef.current;
+    if (!slider || !gallery.length || !slider.clientWidth) return;
+    const imageIndex = Math.min(
+      Math.round(slider.scrollLeft / slider.clientWidth),
+      gallery.length - 1,
+    );
+    setSelectedGalleryImage(gallery[imageIndex]);
+  };
 
   const handleZoomMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -501,7 +522,7 @@ export default function ProductDetailPage() {
       <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-5">
           <div className="grid gap-5 md:grid-cols-[120px_1fr]">
-            <div className="flex flex-col gap-3">
+            <div className="hidden flex-col gap-3 md:flex">
               {gallery.map((image, index) => (
                 <button
                   key={`${product.name}-${index}`}
@@ -516,7 +537,7 @@ export default function ProductDetailPage() {
               ))}
             </div>
 
-            <div className="overflow-hidden rounded-[12px] border border-[#e2dfda] bg-[#f4f0eb] p-3">
+            <div className="hidden overflow-hidden rounded-[12px] border border-[#e2dfda] bg-[#f4f0eb] p-3 md:block">
               <div
                 className="group relative h-[620px] overflow-hidden rounded-[8px] bg-[#f4f0eb]"
                 onMouseMove={handleZoomMouseMove}
@@ -531,6 +552,62 @@ export default function ProductDetailPage() {
                   }}
                 />
               </div>
+            </div>
+
+            <div className="-mx-4 min-w-0 sm:-mx-6 md:mx-0 md:hidden">
+              <div
+                ref={mobileGalleryRef}
+                onScroll={handleMobileGalleryScroll}
+                role="region"
+                aria-label="Product image gallery"
+                className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {gallery.map((image, index) => (
+                  <div
+                    key={`${product.name}-mobile-${index}`}
+                    role="group"
+                    aria-label={`Image ${index + 1} of ${gallery.length}`}
+                    className="aspect-[3/4] w-full shrink-0 snap-center bg-[#f4f0eb]"
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.name} image ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {gallery.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {gallery.map((image, index) => (
+                    <button
+                      key={`${product.name}-mobile-thumbnail-${index}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedGalleryImage(image);
+                        mobileGalleryRef.current?.scrollTo({
+                          left: index * (mobileGalleryRef.current?.clientWidth || 0),
+                          behavior: "smooth",
+                        });
+                      }}
+                      aria-pressed={selectedGalleryImage === image}
+                      aria-label={`View product image ${index + 1}`}
+                      className={`h-[88px] w-[64px] shrink-0 overflow-hidden border bg-white transition ${
+                        selectedGalleryImage === image
+                          ? "border-[#111111] ring-1 ring-[#111111]"
+                          : "border-[#ded9d2]"
+                      }`}
+                    >
+                      <img
+                        src={image}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

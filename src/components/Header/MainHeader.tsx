@@ -283,7 +283,6 @@ const MainHeader = ({ headerData }: IProps) => {
       )}
 
       <MobileMenu
-        headerLogo={headerData?.headerLogo || null}
         isOpen={navigationOpen}
         onClose={() => setNavigationOpen(false)}
         menuData={menuData}

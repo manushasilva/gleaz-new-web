@@ -7,13 +7,12 @@ import { CloseIcon } from "./icons";
 import Image from "next/image";
 
 interface MobileMenuProps {
-  headerLogo: string | null;
   isOpen: boolean;
   onClose: () => void;
   menuData: MenuItem[];
 }
 
-const MobileMenu = ({ isOpen, onClose, menuData, headerLogo }: MobileMenuProps) => {
+const MobileMenu = ({ isOpen, onClose, menuData }: MobileMenuProps) => {
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
 
   // Close menu when clicking outside
@@ -78,10 +77,10 @@ const MobileMenu = ({ isOpen, onClose, menuData, headerLogo }: MobileMenuProps) 
             <div>
               <Link className="block shrink-0" href="/">
                 <Image
-                  src={headerLogo || "/images/logo/logo-icon.svg"}
-                  alt="Logo"
-                  width={70}
-                  height={70}
+                  src="/images/logo/gleaz-logo.svg"
+                  alt="GLEAZ"
+                  width={120}
+                  height={45}
                   priority
                 />
               </Link>
