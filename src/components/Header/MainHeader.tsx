@@ -226,31 +226,37 @@ const MainHeader = ({ headerData }: IProps) => {
       </header>
 
       {searchModalOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/35 px-4 py-6 backdrop-blur-[2px]">
-          <div className="mx-auto max-w-[1600px]">
-            <div className="ml-auto w-full max-w-[1400px] rounded-[18px] border border-[#eae5e0] bg-[#f3f1ee] p-4 shadow-[0_30px_80px_rgba(17,17,17,0.14)]">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <form onSubmit={handleSearchSubmit} className="flex items-center gap-3 rounded-[12px] border border-[#cfc9c2] bg-white px-4 py-3">
-                    <input
-                      autoFocus
-                      type="text"
-                      value={searchText}
-                      onChange={(event) => setSearchText(event.target.value)}
-                      placeholder="Search articles, pages, or products"
-                      className="w-full bg-transparent text-[1.2rem] font-light text-[#111111] placeholder:text-[#7b7671] focus:outline-none sm:text-[1.5rem]"
-                    />
-                    <button type="submit" className="flex h-12 w-12 items-center justify-center rounded-full border border-[#111111] bg-white text-2xl text-[#111111]" aria-label="Submit search">
-                      ⌕
-                    </button>
-                  </form>
-                </div>
-                <button type="button" onClick={() => setSearchModalOpen(false)} className="text-4xl leading-none text-[#111111]" aria-label="Close search">
-                  ×
-                </button>
-              </div>
+        <div
+          className="fixed inset-0 z-[60] flex items-start justify-center bg-black/65 px-4 pt-[10vh] backdrop-blur-[2px]"
+          onClick={() => setSearchModalOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search GLEAZ"
+            className="w-full max-w-[520px] overflow-hidden rounded-lg bg-white shadow-[0_24px_70px_rgba(0,0,0,0.25)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <form onSubmit={handleSearchSubmit} className="flex min-h-[54px] items-center gap-3 border-b border-[#e5e5e5] px-5">
+              <input
+                autoFocus
+                type="text"
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                placeholder="Search articles, pages, or products"
+                className="h-[52px] min-w-0 flex-1 bg-transparent text-sm font-normal text-[#111111] placeholder:text-[#929292] focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setSearchModalOpen(false)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center text-[#555555] transition hover:text-black"
+                aria-label="Close search"
+              >
+                <CloseIcon />
+              </button>
+            </form>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-4 p-5">
                 <button
                   type="button"
                   onClick={() => {
@@ -258,10 +264,10 @@ const MainHeader = ({ headerData }: IProps) => {
                     setSearchModalOpen(false);
                     router.push("/shop-with-sidebar?category=women");
                   }}
-                  className="rounded-[16px] border border-[#d7d3ce] bg-white px-6 py-10 text-left transition hover:border-[#111111]"
+                  className="min-h-28 rounded-md border border-[#e2dfdb] bg-[#f7f6f4] px-4 py-4 text-left transition hover:border-[#111111]"
                 >
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a7a7a]">Collection</div>
-                  <div className="mt-3 text-3xl font-black uppercase tracking-[-0.08em] text-[#111111]">Women</div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#77736f]">Collection</div>
+                  <div className="mt-2 text-xl font-bold uppercase tracking-[-0.05em] text-[#111111]">Women</div>
                 </button>
 
                 <button
@@ -271,10 +277,10 @@ const MainHeader = ({ headerData }: IProps) => {
                     setSearchModalOpen(false);
                     router.push("/shop-with-sidebar?category=men");
                   }}
-                  className="rounded-[16px] border border-[#d7d3ce] bg-white px-6 py-10 text-left transition hover:border-[#111111]"
+                  className="min-h-28 rounded-md border border-[#e2dfdb] bg-[#f7f6f4] px-4 py-4 text-left transition hover:border-[#111111]"
                 >
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a7a7a]">Collection</div>
-                  <div className="mt-3 text-3xl font-black uppercase tracking-[-0.08em] text-[#111111]">Men</div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#77736f]">Collection</div>
+                  <div className="mt-2 text-xl font-bold uppercase tracking-[-0.05em] text-[#111111]">Men</div>
                 </button>
               </div>
             </div>
