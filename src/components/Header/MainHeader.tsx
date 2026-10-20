@@ -237,14 +237,14 @@ const MainHeader = ({ headerData }: IProps) => {
             className="w-full max-w-[520px] overflow-hidden rounded-lg bg-white shadow-[0_24px_70px_rgba(0,0,0,0.25)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <form onSubmit={handleSearchSubmit} className="flex min-h-[54px] items-center gap-3 border-b border-[#e5e5e5] px-5">
+            <form onSubmit={handleSearchSubmit} className="mx-4 mt-4 flex min-h-[54px] items-center gap-3 rounded-md border border-[#dedbd7] bg-white px-3 transition focus-within:border-[#b8b3ad]">
               <input
                 autoFocus
                 type="text"
                 value={searchText}
                 onChange={(event) => setSearchText(event.target.value)}
                 placeholder="Search articles, pages, or products"
-                className="h-[52px] min-w-0 flex-1 bg-transparent text-sm font-normal text-[#111111] placeholder:text-[#929292] focus:outline-none"
+                className="h-[48px] min-w-0 flex-1 rounded-md border-0 bg-transparent px-2 text-sm font-normal text-[#111111] outline-none ring-0 placeholder:text-[#929292] focus:border-0 focus:outline-none focus:ring-0"
               />
               <button
                 type="button"
@@ -256,7 +256,7 @@ const MainHeader = ({ headerData }: IProps) => {
               </button>
             </form>
 
-            <div className="grid grid-cols-2 gap-4 p-5">
+            <div className="grid grid-cols-2 gap-4 p-4">
                 <button
                   type="button"
                   onClick={() => {
