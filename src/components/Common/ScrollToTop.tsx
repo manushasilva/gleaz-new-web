@@ -34,7 +34,7 @@ export default function ScrollToTop() {
         <button
           onClick={scrollToTop}
           aria-label="Scroll to top"
-          className="fixed bottom-8 right-8 z-999 flex h-11 w-11 items-center justify-center bg-transparent text-[#111111]"
+          className="fixed bottom-8 right-8 z-999 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#111111] shadow-[0_2px_8px_rgba(0,0,0,0.12)]"
         >
           <svg
             aria-hidden="true"
