@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { MenuItem } from "./types";
 import { CloseIcon } from "./icons";
-import Image from "next/image";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -75,14 +74,12 @@ const MobileMenu = ({ isOpen, onClose, menuData }: MobileMenuProps) => {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-3">
             <div>
-              <Link className="block shrink-0" href="/">
-                <Image
-                  src="/images/logo/gleaz-logo.svg"
-                  alt="GLEAZ"
-                  width={120}
-                  height={45}
-                  priority
-                />
+              <Link
+                href="/"
+                aria-label="GLEAZ home"
+                className="block shrink-0 font-display text-[1.7rem] font-extrabold uppercase tracking-[-0.08em] text-[#111111]"
+              >
+                GLEAZ
               </Link>
             </div>
             <button

@@ -240,14 +240,11 @@ export default function ProductDetailPage() {
     )),
     [activeColorVariant?.images, product?.images, product?.image],
   );
-  const selectedGalleryIndex = Math.max(gallery.indexOf(selectedGalleryImage), 0);
   const isInWishlist = Boolean(product && wishlistItems.some((item) => item.id === product.id));
 
   useEffect(() => {
-    const slider = mobileGalleryRef.current;
-    if (!slider || !gallery.length) return;
-    slider.scrollTo({ left: selectedGalleryIndex * slider.clientWidth });
-  }, [gallery, selectedGalleryIndex]);
+    mobileGalleryRef.current?.scrollTo({ left: 0 });
+  }, [gallery]);
 
   const handleMobileGalleryScroll = () => {
     const slider = mobileGalleryRef.current;
