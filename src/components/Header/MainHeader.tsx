@@ -68,10 +68,12 @@ const MainHeader = ({ headerData }: IProps) => {
     const trimmedQuery = searchText.trim();
 
     if (!trimmedQuery) {
+      setSearchModalOpen(false);
       router.push("/shop-with-sidebar?category=women");
       return;
     }
 
+    setSearchModalOpen(false);
     router.push(`/shop-with-sidebar?q=${encodeURIComponent(trimmedQuery)}`);
   };
 
